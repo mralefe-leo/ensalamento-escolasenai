@@ -366,8 +366,7 @@ with st.sidebar:
     st.markdown("---")
     try:
         st.image("1.png", use_container_width=True)
-        st.image("2.png", use_container_width=True)
-        st.image("3.png", use_container_width=True)
+        
     except: pass
     st.caption("Sistema de Gestão v1.0")
 
