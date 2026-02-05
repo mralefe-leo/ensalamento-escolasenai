@@ -156,15 +156,6 @@ st.markdown("""
 
 # LISTAS DE DADOS
 
-LISTA_SALAS = sorted([
-    "SALA DE AULA 24","SALA DE AULA 25","SALA DE AULA 49","SALA DE AULA 55",
-    "SALA DE AULA 56","SALA DE AULA 61","SALA DE AULA 62","SALA DE AULA 63",
-    "SALA DE AULA 71","SALA DE AULA 72","SALA DE AULA 73",
-    "LAB. DE INFORMÁTICA 31","LAB. DE INFORMÁTICA 48","LAB. DE INFORMÁTICA 74",
-    "LAB. DE INFORMÁTICA 75","LAB. DE REDES DE DISTRIBUIÇÃO 84",
-    "GALPÃO DE EDIFICAÇÕES 51","GALPÃO DE ELÉTRICA 52",
-    "GALPÃO DE ENERGIA RENOVÁVEL 53","SALA DE ACOLHIMENTO 60"
-])
 
 HORARIOS_TURNO = {
     "Manhã": { "Turno Inteiro": (time(7,0), time(12,0)), "1º Horário": (time(7,0), time(9,30)), "2º Horário": (time(9,30), time(12,0)) },
@@ -179,21 +170,29 @@ HORARIOS_TURNO = {
 @st.cache_resource
 def conectar_google_sheets():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = None
+    
+    # Tenta carregar dos secrets
     if "gcp_service_account" in st.secrets:
         try:
             creds_dict = dict(st.secrets["gcp_service_account"])
-            if "private_key" in creds_dict: creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+            if "private_key" in creds_dict: 
+                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-            return gspread.authorize(creds).open("sistema_ensalamento_db").sheet1
-        except: st.stop()
-    try:
-        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-        return gspread.authorize(creds).open("sistema_ensalamento_db").sheet1
-    except: st.error("Erro de credenciais"); st.stop()
+        except: pass
+    
+    # Se falhar, tenta arquivo local
+    if not creds:
+        try:
+            creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+        except: st.error("Erro de credenciais"); st.stop()
+
+    # Retorna a PLANILHA (Workbook) inteira, não só a aba 1
+    return gspread.authorize(creds).open("sistema_ensalamento_db")
 
 def carregar_dados():
     try:
-        sheet = conectar_google_sheets()
+        sheet = conectar_google_sheets().sheet1
         data = sheet.get_all_records()
         df = pd.DataFrame(data)
         if not df.empty: df.columns = df.columns.str.lower().str.strip()
@@ -209,6 +208,17 @@ def carregar_dados():
         return df
     except: return pd.DataFrame()
 
+def carregar_lista_auxiliar(nome_aba):
+    try:
+        ss = conectar_google_sheets()
+        # Tenta pegar a aba específica
+        worksheet = ss.worksheet(nome_aba)
+        # Pega todos os valores da primeira coluna (ignorando o cabeçalho se houver)
+        valores = worksheet.col_values(1)
+        if valores:
+            return sorted(valores[1:]) # Remove o cabeçalho (linha 1) e ordena
+        return []
+    except: return []
 
 # LÓGICA DE NEGÓCIO
 
@@ -386,15 +396,21 @@ tab1, tab2, tab3 = st.tabs(["Novo Agendamento", "Visualizar Agenda", "Coordenaç
 # TAB 1: AGENDAMENTO 
 
 with tab1:
-    
+    # Carrega listas atualizadas do banco
+    lista_docentes = carregar_lista_auxiliar("Docentes")
+    lista_turmas = carregar_lista_auxiliar("Turmas")
+    lista_salas = carregar_lista_auxiliar("Salas")
+
     with st.form("form_agendamento"):
         st.subheader("Dados do Agendamento")
         c1, c2 = st.columns(2)
         with c1:
-            professor = st.text_input("Nome do Docente")
-            turma = st.text_input("Turma/Curso")
-            sala = st.selectbox("Ambiente / Sala", LISTA_SALAS)
+            # AGORA SÃO SELECTBOX (Listas Suspensas)
+            professor = st.selectbox("Docente", lista_docentes) if lista_docentes else st.text_input("Docente (Cadastre na aba Coordenação)")
+            turma = st.selectbox("Turma/Curso", lista_turmas) if lista_turmas else st.text_input("Turma (Cadastre na aba Coordenação)")
+            sala = st.selectbox("Ambiente / Sala", lista_salas) if lista_salas else st.warning("Cadastre salas na aba Coordenação")
             data = st.date_input("Data da Aula")
+        
         with c2:
             turno = st.selectbox("Turno", list(HORARIOS_TURNO.keys()))
             situacao = st.radio("Período", list(HORARIOS_TURNO[turno].keys()), horizontal=True)
@@ -402,8 +418,18 @@ with tab1:
             except: h_ini, h_fim = time(0,0), time(0,0)
             
             ch1, ch2 = st.columns(2)
-            hora_inicio = ch1.time_input("Início", h_ini)
-            hora_fim = ch2.time_input("Fim", h_fim)
+            hora_inicio = ch1.time_input("Início Aula", h_ini)
+            hora_fim = ch2.time_input("Fim Aula", h_fim)
+            
+            # --- NOVO CAMPO DE INTERVALO OBRIGATÓRIO ---
+            st.markdown("🔹 **Definição do Intervalo**")
+            ci1, ci2 = st.columns(2)
+            # Tenta sugerir um intervalo padrão baseado no turno
+            def_int_ini = time(9,30) if "Manhã" in turno else (time(15,15) if "Tarde" in turno else time(20,0))
+            def_int_fim = time(9,50) if "Manhã" in turno else (time(15,35) if "Tarde" in turno else time(20,15))
+            
+            inicio_intervalo = ci1.time_input("Início Intervalo", def_int_ini)
+            fim_intervalo = ci2.time_input("Fim Intervalo", def_int_fim)
 
         st.markdown("---")
         st.markdown(f"**Recursos Móveis (Estoque: {TOTAL_CHROMEBOOKS} Chrome | {TOTAL_NOTEBOOKS} Note)**")
@@ -412,33 +438,28 @@ with tab1:
         qtd_note = cr2.number_input("Qtd. Notebooks", 0, TOTAL_NOTEBOOKS)
 
         st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Botão de confirmação
         if st.form_submit_button("Confirmar Agendamento"):
-            if not professor or not turma:
-                st.warning("Preencha Professor e Turma.")
+            if not professor or not turma or not sala:
+                st.warning("Verifique se Docente, Turma e Sala estão selecionados.")
             else:
                 df_check = carregar_dados()
-                
-                # Executa AMBAS as verificações antes de decidir
                 conflito, msg_c = verificar_conflito_sala(df_check, sala, data, hora_inicio, hora_fim)
                 recurso_ok, msg_r = verificar_disponibilidade_recursos(df_check, data, hora_inicio, hora_fim, qtd_chrome, qtd_note)
                 
-                # Se houver QUALQUER impedimento (Sala OU Recurso), exibe os erros
                 if conflito or not recurso_ok:
-                    if conflito: 
-                        st.error(f"❌ {msg_c}")
-                    
-                    if not recurso_ok:
-                        # O container ajuda a dar destaque visual se tiver mais de um item
-                        with st.container():
-                            st.error(f"❌ Indisponibilidade de Recursos:\n{msg_r}")
-                
+                    if conflito: st.error(f"❌ {msg_c}")
+                    if not recurso_ok: 
+                        with st.container(): st.error(f"❌ Indisponibilidade de Recursos:\n{msg_r}")
                 else:
-                    # Se não houve nenhum erro, salva na planilha
-                    sheet = conectar_google_sheets()
+                    ss = conectar_google_sheets()
+                    sheet = ss.sheet1 # Grava na aba principal
+                    # AGORA SALVA OS INTERVALOS DIRETAMENTE
                     sheet.append_row([
                         str(data), turno, situacao, str(hora_inicio)[:5], str(hora_fim)[:5],
                         sala, professor, turma, str(datetime.now()),
-                        qtd_chrome, qtd_note, "", ""
+                        qtd_chrome, qtd_note, str(inicio_intervalo)[:5], str(fim_intervalo)[:5]
                     ])
                     st.success("✅ Agendado com sucesso!")
                     st.cache_data.clear()
@@ -504,62 +525,61 @@ with tab2:
 # TAB 3: COORDENAÇÃO (COM SEGURANÇA NA PLANILHA)
 
 with tab3:
-    if 'coord_logado' not in st.session_state: st.session_state['coord_logado'] = False
+    st.subheader("Gestão de Cadastros")
+    st.info("Utilize esta área para alimentar as listas do sistema.")
     
-    if not st.session_state['coord_logado']:
-        col1, col2, col3 = st.columns([1,1,1])
-  
-        with col2:
-            st.markdown('<div class="login-box">', unsafe_allow_html=True)
-            st.markdown("### Acesso Restrito")
-            pwd = st.text_input("Senha", type="password", label_visibility="collapsed")
-            
-            if st.button("Entrar"):
-                
-                try:
-                    senha_secreta = st.secrets["senha_coordenacao"]
-                except:
-                    st.error("ERRO: Senha da coordenação não configurada nos Secrets!")
-                    st.stop()
+    col_a, col_b, col_c = st.columns(3)
+    
+    # --- CADASTRO DE DOCENTES ---
+    with col_a:
+        st.markdown("**🧑‍🏫 Docentes**")
+        with st.form("add_docente", clear_on_submit=True):
+            novo_docente = st.text_input("Nome do Docente")
+            if st.form_submit_button("Adicionar"):
+                if novo_docente:
+                    ss = conectar_google_sheets()
+                    try:
+                        ws = ss.worksheet("Docentes")
+                        ws.append_row([novo_docente])
+                        st.success("Docente salvo!")
+                        st.cache_resource.clear() # Limpa cache para atualizar listas
+                    except: st.error("Aba 'Docentes' não encontrada na planilha.")
+    
+    # --- CADASTRO DE TURMAS ---
+    with col_b:
+        st.markdown("**🎓 Turmas**")
+        with st.form("add_turma", clear_on_submit=True):
+            nova_turma = st.text_input("Nome da Turma")
+            if st.form_submit_button("Adicionar"):
+                if nova_turma:
+                    ss = conectar_google_sheets()
+                    try:
+                        ws = ss.worksheet("Turmas")
+                        ws.append_row([nova_turma])
+                        st.success("Turma salva!")
+                        st.cache_resource.clear()
+                    except: st.error("Aba 'Turmas' não encontrada na planilha.")
 
-                if pwd == senha_secreta: 
-                    st.session_state['coord_logado'] = True
-                    st.rerun()
-                else: 
-                    st.error("Senha incorreta")
-            st.markdown('</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        c_head1, c_head2 = st.columns([4,1])
-        c_head1.subheader("Gestão de Intervalos")
-        if c_head2.button("Sair"): st.session_state['coord_logado'] = False; st.rerun()
-        
-        d_edit = st.date_input("Data para editar", key="d_coord")
-        df_c = carregar_dados()
-        
-        if not df_c.empty:
-            df_c['data'] = df_c['data'].astype(str)
-            aulas = df_c[df_c['data'] == str(d_edit)]
-            if not aulas.empty:
-                opcoes = {f"{r['sala']} | {r['professor']} ({r['hora_inicio']}) ({r['hora_fim']}) ": i for i, r in aulas.iterrows()}
-                escolha = st.selectbox("Selecione a aula:", list(opcoes.keys()))
-                
-                with st.form("edit_int"):
-                    ci1, ci2 = st.columns(2)
-                    n_ini = ci1.time_input("Início Intervalo", time(9,30))
-                    n_fim = ci2.time_input("Fim Intervalo", time(9,50))
-                    if st.form_submit_button("Salvar Intervalo"):
-                        idx_real = opcoes[escolha] + 2 
-                        sheet = conectar_google_sheets()
-                        
-                        headers = [h.lower().strip() for h in sheet.row_values(1)]
-                        try:
-                            c_ini = headers.index('inicio_intervalo') + 1
-                            c_fim = headers.index('fim_intervalo') + 1
-                            sheet.update_cell(idx_real, c_ini, str(n_ini)[:5])
-                            sheet.update_cell(idx_real, c_fim, str(n_fim)[:5])
-                            st.success("Intervalo salvo!")
-                            st.cache_data.clear()
-                        except: st.error("Colunas de intervalo não encontradas na planilha.")
-            else: st.info("Sem aulas nesta data.")
-        st.markdown('</div>', unsafe_allow_html=True)
+    # --- CADASTRO DE SALAS ---
+    with col_c:
+        st.markdown("**🏫 Ambientes**")
+        with st.form("add_sala", clear_on_submit=True):
+            nova_sala = st.text_input("Nome da Sala")
+            if st.form_submit_button("Adicionar"):
+                if nova_sala:
+                    ss = conectar_google_sheets()
+                    try:
+                        ws = ss.worksheet("Salas")
+                        ws.append_row([nova_sala])
+                        st.success("Sala salva!")
+                        st.cache_resource.clear()
+                    except: st.error("Aba 'Salas' não encontrada na planilha.")
+    
+    st.markdown("---")
+    # Pequena visualização das listas atuais
+    if st.checkbox("Visualizar listas cadastradas"):
+        ld = carregar_lista_auxiliar("Docentes")
+        lt = carregar_lista_auxiliar("Turmas")
+        ls = carregar_lista_auxiliar("Salas")
+        c1, c2, c3 = st.columns(3)
+        c1.write(ld); c2.write(lt); c3.write(ls)
