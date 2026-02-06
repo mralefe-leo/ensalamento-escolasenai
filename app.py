@@ -418,7 +418,7 @@ with tab1:
             professor = st.selectbox("Docente", lista_docentes) if lista_docentes else st.text_input("Docente (Cadastre na aba Coordenação)")
             turma = st.selectbox("Turma/Curso", lista_turmas) if lista_turmas else st.text_input("Turma (Cadastre na aba Coordenação)")
             sala = st.selectbox("Ambiente / Sala", lista_salas) if lista_salas else st.warning("Cadastre salas na aba Coordenação")
-            st.markdown("<br>", unsafe_allow_html=True)
+            
             data = st.date_input("Data da Aula")
         
         with c2:
@@ -430,7 +430,7 @@ with tab1:
             ch1, ch2 = st.columns(2)
             hora_inicio = ch1.selectbox("Início Aula", OPCOES_INICIO)
             hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM) 
-            st.markdown("<br>", unsafe_allow_html=True)                            
+                                   
             st.markdown("Intervalo") 
             sel_intervalo = st.selectbox("Selecione o Horário do Intervalo", OPCOES_INTERVALO, label_visibility="collapsed")
             
