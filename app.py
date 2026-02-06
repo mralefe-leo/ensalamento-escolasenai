@@ -403,9 +403,10 @@ tab1, tab2, tab3 = st.tabs(["Novo Agendamento", "Visualizar Agenda", "Coordenaç
 
 
 # TAB 1: AGENDAMENTO 
+ 
 
 with tab1:
-    
+    # Carrega listas atualizadas do banco
     lista_docentes = carregar_lista_auxiliar("Docentes")
     lista_turmas = carregar_lista_auxiliar("Turmas")
     lista_salas = carregar_lista_auxiliar("Salas")
@@ -413,28 +414,40 @@ with tab1:
     with st.form("form_agendamento"):
         st.subheader("Dados do Agendamento")
         c1, c2 = st.columns(2)
+        
+        # --- COLUNA DA ESQUERDA (c1) ---
         with c1:
-            
             professor = st.selectbox("Docente", lista_docentes) if lista_docentes else st.text_input("Docente (Cadastre na aba Coordenação)")
             turma = st.selectbox("Turma/Curso", lista_turmas) if lista_turmas else st.text_input("Turma (Cadastre na aba Coordenação)")
             sala = st.selectbox("Ambiente / Sala", lista_salas) if lista_salas else st.warning("Cadastre salas na aba Coordenação")
             
+            
+           
             data = st.date_input("Data da Aula")
         
+        # --- COLUNA DA DIREITA (c2) ---
         with c2:
-            
             turno = st.selectbox("Turno", ["Manhã", "Tarde", "Noite", "Integral"])
             situacao = st.radio("Período", ["Turno Inteiro", "1º Horário", "2º Horário"], horizontal=True)
             
-            # --- HORÁRIOS DE AULA (Selectbox para fixar opções) ---
+            # Horários da Aula
             ch1, ch2 = st.columns(2)
             hora_inicio = ch1.selectbox("Início Aula", OPCOES_INICIO)
-            hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM) 
-                                   
-            st.markdown("Intervalo") 
-            sel_intervalo = st.selectbox("Selecione o Horário do Intervalo", OPCOES_INTERVALO, label_visibility="collapsed")
+            hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM)
             
             
+            ci1, ci2 = st.columns(2)
+            with ci1:
+            
+                st.markdown(
+                    """
+                    <p style='margin-bottom: 18px; font-size: 14px; font-weight: bold;'>Intervalo</p>
+                    """, 
+                    unsafe_allow_html=True
+                )
+                sel_intervalo = st.selectbox("Selecione intervalo", OPCOES_INTERVALO, label_visibility="collapsed")
+            
+            # Lógica de separação do intervalo
             if sel_intervalo and "–" in sel_intervalo:
                 partes = sel_intervalo.split("–")
                 inicio_intervalo = partes[0].strip()
@@ -456,13 +469,11 @@ with tab1:
             if not professor or not turma or not sala:
                 st.warning("Verifique se Docente, Turma e Sala estão selecionados.")
             else:
-                
+                # Conversão para validação
                 obj_inicio = datetime.strptime(hora_inicio, "%H:%M").time()
                 obj_fim = datetime.strptime(hora_fim, "%H:%M").time()
                 
                 df_check = carregar_dados()
-                
-                
                 conflito, msg_c = verificar_conflito_sala(df_check, sala, data, obj_inicio, obj_fim)
                 recurso_ok, msg_r = verificar_disponibilidade_recursos(df_check, data, obj_inicio, obj_fim, qtd_chrome, qtd_note)
                 
@@ -471,10 +482,8 @@ with tab1:
                     if not recurso_ok: 
                         with st.container(): st.error(f"❌ Indisponibilidade de Recursos:\n{msg_r}")
                 else:
-                    ss = conectar_google_sheets()                  
+                    ss = conectar_google_sheets()
                     sheet = ss.sheet1
-                    
-                    
                     sheet.append_row([
                         str(data), turno, situacao, hora_inicio, hora_fim,
                         sala, professor, turma, str(datetime.now()),
