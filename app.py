@@ -161,9 +161,8 @@ st.markdown("""
 OPCOES_INICIO = ["07:30", "13:00", "13:30", "18:00", "18:30"]
 OPCOES_FIM = ["11:00", "11:30", "16:00", "17:00", "17:30", "21:50"]
 
-# Intervalos blocados (Texto para o usuário selecionar)
 OPCOES_INTERVALO = [
-    "Sem Intervalo", # Opção caso não tenha
+    "Sem Intervalo", 
     "08:45 – 09:05",
     "09:10 – 09:30",
     "09:35 – 09:55",
@@ -175,14 +174,14 @@ OPCOES_INTERVALO = [
 ]
 
 
-# CONEXÃO E DADOS
+
 
 @st.cache_resource
 def conectar_google_sheets():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds = None
     
-    # Tenta carregar dos secrets
+    
     if "gcp_service_account" in st.secrets:
         try:
             creds_dict = dict(st.secrets["gcp_service_account"])
@@ -191,13 +190,13 @@ def conectar_google_sheets():
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         except: pass
     
-    # Se falhar, tenta arquivo local
+    
     if not creds:
         try:
             creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
         except: st.error("Erro de credenciais"); st.stop()
 
-    # Retorna a PLANILHA (Workbook) inteira, não só a aba 1
+    
     return gspread.authorize(creds).open("sistema_ensalamento_db")
 
 def carregar_dados():
@@ -221,12 +220,12 @@ def carregar_dados():
 def carregar_lista_auxiliar(nome_aba):
     try:
         ss = conectar_google_sheets()
-        # Tenta pegar a aba específica
+        
         worksheet = ss.worksheet(nome_aba)
-        # Pega todos os valores da primeira coluna (ignorando o cabeçalho se houver)
+       
         valores = worksheet.col_values(1)
         if valores:
-            return sorted(valores[1:]) # Remove o cabeçalho (linha 1) e ordena
+            return sorted(valores[1:]) 
         return []
     except: return []
 
@@ -254,20 +253,20 @@ def verificar_disponibilidade_recursos(df, data_agendamento, inicio_novo, fim_no
     agendamentos = df[df['data'] == str(data_agendamento)]
     chrome_uso, note_uso = 0, 0
     
-    # Calcula o uso total naquele horário
+    
     for _, row in agendamentos.iterrows():
         try:
             str_ini, str_fim = str(row['hora_inicio'])[:5], str(row['hora_fim'])[:5]
             ini_exist = datetime.strptime(str_ini, "%H:%M").time()
             fim_exist = datetime.strptime(str_fim, "%H:%M").time()
             
-            # Se houver intersecção de horário, soma o uso
+            
             if (inicio_novo < fim_exist) and (fim_novo > ini_exist):
                 chrome_uso += int(row['qtd_chromebooks'])
                 note_uso += int(row['qtd_notebooks'])
         except: continue
     
-    # --- NOVA LÓGICA DE ACUMULAÇÃO DE ERROS ---
+    
     erros_estoque = []
     
     saldo_chrome = TOTAL_CHROMEBOOKS - chrome_uso
@@ -278,7 +277,7 @@ def verificar_disponibilidade_recursos(df, data_agendamento, inicio_novo, fim_no
     if qtd_note > saldo_note:
         erros_estoque.append(f"- Notebooks: Pedido {qtd_note} | Disponível: {saldo_note}")
         
-    # Se a lista de erros não estiver vazia, retorna False e junta as mensagens
+    
     if len(erros_estoque) > 0:
         return False, "\n".join(erros_estoque)
         
@@ -406,7 +405,7 @@ tab1, tab2, tab3 = st.tabs(["Novo Agendamento", "Visualizar Agenda", "Coordenaç
 # TAB 1: AGENDAMENTO 
 
 with tab1:
-    # Carrega listas atualizadas do banco
+    
     lista_docentes = carregar_lista_auxiliar("Docentes")
     lista_turmas = carregar_lista_auxiliar("Turmas")
     lista_salas = carregar_lista_auxiliar("Salas")
@@ -415,26 +414,23 @@ with tab1:
         st.subheader("Dados do Agendamento")
         c1, c2 = st.columns(2)
         with c1:
-            # AGORA SÃO SELECTBOX (Listas Suspensas)
+            
             professor = st.selectbox("Docente", lista_docentes) if lista_docentes else st.text_input("Docente (Cadastre na aba Coordenação)")
             turma = st.selectbox("Turma/Curso", lista_turmas) if lista_turmas else st.text_input("Turma (Cadastre na aba Coordenação)")
             sala = st.selectbox("Ambiente / Sala", lista_salas) if lista_salas else st.warning("Cadastre salas na aba Coordenação")
+            st.markdown("<br>", unsafe_allow_html=True)
             data = st.date_input("Data da Aula")
         
         with c2:
-            # Mantemos o Turno e Situação apenas para registro na planilha
+            
             turno = st.selectbox("Turno", ["Manhã", "Tarde", "Noite", "Integral"])
             situacao = st.radio("Período", ["Turno Inteiro", "1º Horário", "2º Horário"], horizontal=True)
             
             # --- HORÁRIOS DE AULA (Selectbox para fixar opções) ---
             ch1, ch2 = st.columns(2)
             hora_inicio = ch1.selectbox("Início Aula", OPCOES_INICIO)
-            hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM)
-            
-         
-        
-            
-            st.markdown("**Intervalo**") 
+            hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM)                             
+            st.markdown("Intervalo") 
             sel_intervalo = st.selectbox("Selecione o Horário do Intervalo", OPCOES_INTERVALO, label_visibility="collapsed")
             
             
@@ -563,7 +559,7 @@ with tab3:
                         ws = ss.worksheet("Docentes")
                         ws.append_row([novo_docente])
                         st.success("Docente salvo!")
-                        st.cache_resource.clear() # Limpa cache para atualizar listas
+                        st.cache_resource.clear() 
                     except: st.error("Aba 'Docentes' não encontrada na planilha.")
     
     # --- CADASTRO DE TURMAS ---
@@ -597,7 +593,7 @@ with tab3:
                     except: st.error("Aba 'Salas' não encontrada na planilha.")
     
     st.markdown("---")
-    # Pequena visualização das listas atuais
+    
     if st.checkbox("Visualizar listas cadastradas"):
         ld = carregar_lista_auxiliar("Docentes")
         lt = carregar_lista_auxiliar("Turmas")
