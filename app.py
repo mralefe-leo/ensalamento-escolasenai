@@ -18,7 +18,33 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+if 'logado' not in st.session_state:
+    st.session_state['logado'] = False
 
+if not st.session_state['logado']:
+    
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        try: st.image("logo.png", use_column_width=True) 
+        except: st.title("🔐 Acesso Restrito")
+        
+        st.info("Este sistema é exclusivo para uso interno.")
+        
+        senha_input = st.text_input("Digite a senha de acesso", type="password")
+        
+        if st.button("Entrar no Sistema"):
+            
+            try: senha_correta = st.secrets["senha_coordenacao"]
+            except: senha_correta = "admin" 
+            
+            if senha_input == senha_correta:
+                st.session_state['logado'] = True
+                st.rerun() 
+            else:
+                st.error("Senha incorreta.")
+    
+    st.stop() 
 
 # CONSTANTES DE ESTOQUE
 
