@@ -429,7 +429,8 @@ with tab1:
             # --- HORÁRIOS DE AULA (Selectbox para fixar opções) ---
             ch1, ch2 = st.columns(2)
             hora_inicio = ch1.selectbox("Início Aula", OPCOES_INICIO)
-            hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM)                             
+            hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM) 
+            st.markdown("<br>", unsafe_allow_html=True)                            
             st.markdown("Intervalo") 
             sel_intervalo = st.selectbox("Selecione o Horário do Intervalo", OPCOES_INTERVALO, label_visibility="collapsed")
             
