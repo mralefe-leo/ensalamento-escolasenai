@@ -441,7 +441,7 @@ with tab1:
             
                 st.markdown(
                     """
-                    <p style='margin-bottom: 18px; font-size: 14px; font-weight: bold;'>Intervalo</p>
+                    <p style='margin-bottom: 15px; font-size: 14px; font-weight: bold;'>Intervalo</p>
                     """, 
                     unsafe_allow_html=True
                 )
