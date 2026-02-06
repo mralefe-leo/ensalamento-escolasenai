@@ -157,12 +157,22 @@ st.markdown("""
 # LISTAS DE DADOS
 
 
-HORARIOS_TURNO = {
-    "Manhã": { "Turno Inteiro": (time(7,0), time(12,0)), "1º Horário": (time(7,0), time(9,30)), "2º Horário": (time(9,30), time(12,0)) },
-    "Tarde": { "Turno Inteiro": (time(13,0), time(17,30)), "1º Horário": (time(13,0), time(15,15)), "2º Horário": (time(15,15), time(17,30)) },
-    "Noite": { "Turno Inteiro": (time(18,0), time(22,0)), "1º Horário": (time(18,0), time(20,0)), "2º Horário": (time(20,0), time(22,0)) },
-    "Integral": { "Turno Inteiro": (time(7,0), time(17,30)), "1º Horário": (time(7,0), time(12,0)), "2º Horário": (time(13,0), time(17,30)) }
-}
+# --- NOVAS CONSTANTES DE HORÁRIOS ---
+OPCOES_INICIO = ["07:30", "13:00", "13:30", "18:00", "18:30"]
+OPCOES_FIM = ["11:00", "11:30", "16:00", "17:00", "17:30", "21:50"]
+
+# Intervalos blocados (Texto para o usuário selecionar)
+OPCOES_INTERVALO = [
+    "Sem Intervalo", # Opção caso não tenha
+    "08:45 – 09:05",
+    "09:10 – 09:30",
+    "09:35 – 09:55",
+    "14:45 – 15:05",
+    "15:10 – 15:30",
+    "15:35 – 15:55",
+    "19:40 – 20:00",
+    "20:05 – 20:25"
+]
 
 
 # CONEXÃO E DADOS
@@ -412,24 +422,29 @@ with tab1:
             data = st.date_input("Data da Aula")
         
         with c2:
-            turno = st.selectbox("Turno", list(HORARIOS_TURNO.keys()))
-            situacao = st.radio("Período", list(HORARIOS_TURNO[turno].keys()), horizontal=True)
-            try: h_ini, h_fim = HORARIOS_TURNO[turno][situacao]
-            except: h_ini, h_fim = time(0,0), time(0,0)
+            # Mantemos o Turno e Situação apenas para registro na planilha
+            turno = st.selectbox("Turno", ["Manhã", "Tarde", "Noite", "Integral"])
+            situacao = st.radio("Período", ["Turno Inteiro", "1º Horário", "2º Horário"], horizontal=True)
             
+            # --- HORÁRIOS DE AULA (Selectbox para fixar opções) ---
             ch1, ch2 = st.columns(2)
-            hora_inicio = ch1.time_input("Início Aula", h_ini)
-            hora_fim = ch2.time_input("Fim Aula", h_fim)
+            hora_inicio = ch1.selectbox("Início Aula", OPCOES_INICIO)
+            hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM)
             
-            # --- NOVO CAMPO DE INTERVALO OBRIGATÓRIO ---
-            st.markdown("🔹 **Definição do Intervalo**")
-            ci1, ci2 = st.columns(2)
-            # Tenta sugerir um intervalo padrão baseado no turno
-            def_int_ini = time(9,30) if "Manhã" in turno else (time(15,15) if "Tarde" in turno else time(20,0))
-            def_int_fim = time(9,50) if "Manhã" in turno else (time(15,35) if "Tarde" in turno else time(20,15))
+         
+        
             
-            inicio_intervalo = ci1.time_input("Início Intervalo", def_int_ini)
-            fim_intervalo = ci2.time_input("Fim Intervalo", def_int_fim)
+            st.markdown("**Intervalo**") 
+            sel_intervalo = st.selectbox("Selecione o Horário do Intervalo", OPCOES_INTERVALO, label_visibility="collapsed")
+            
+            
+            if sel_intervalo and "–" in sel_intervalo:
+                partes = sel_intervalo.split("–")
+                inicio_intervalo = partes[0].strip()
+                fim_intervalo = partes[1].strip()
+            else:
+                inicio_intervalo = ""
+                fim_intervalo = ""
 
         st.markdown("---")
         st.markdown(f"**Recursos Móveis (Estoque: {TOTAL_CHROMEBOOKS} Chrome | {TOTAL_NOTEBOOKS} Note)**")
@@ -444,26 +459,32 @@ with tab1:
             if not professor or not turma or not sala:
                 st.warning("Verifique se Docente, Turma e Sala estão selecionados.")
             else:
+                
+                obj_inicio = datetime.strptime(hora_inicio, "%H:%M").time()
+                obj_fim = datetime.strptime(hora_fim, "%H:%M").time()
+                
                 df_check = carregar_dados()
-                conflito, msg_c = verificar_conflito_sala(df_check, sala, data, hora_inicio, hora_fim)
-                recurso_ok, msg_r = verificar_disponibilidade_recursos(df_check, data, hora_inicio, hora_fim, qtd_chrome, qtd_note)
+                
+                
+                conflito, msg_c = verificar_conflito_sala(df_check, sala, data, obj_inicio, obj_fim)
+                recurso_ok, msg_r = verificar_disponibilidade_recursos(df_check, data, obj_inicio, obj_fim, qtd_chrome, qtd_note)
                 
                 if conflito or not recurso_ok:
                     if conflito: st.error(f"❌ {msg_c}")
                     if not recurso_ok: 
                         with st.container(): st.error(f"❌ Indisponibilidade de Recursos:\n{msg_r}")
                 else:
-                    ss = conectar_google_sheets()
-                    sheet = ss.sheet1 # Grava na aba principal
-                    # AGORA SALVA OS INTERVALOS DIRETAMENTE
+                    ss = conectar_google_sheets()                  
+                    sheet = ss.sheet1
+                    
+                    
                     sheet.append_row([
-                        str(data), turno, situacao, str(hora_inicio)[:5], str(hora_fim)[:5],
+                        str(data), turno, situacao, hora_inicio, hora_fim,
                         sala, professor, turma, str(datetime.now()),
-                        qtd_chrome, qtd_note, str(inicio_intervalo)[:5], str(fim_intervalo)[:5]
+                        qtd_chrome, qtd_note, inicio_intervalo, fim_intervalo
                     ])
                     st.success("✅ Agendado com sucesso!")
                     st.cache_data.clear()
-    
 
 
 # TAB 2: VISUALIZAÇÃO (ATUALIZADO COM INTERVALO)
@@ -472,7 +493,7 @@ with tab2:
     
     c1, c2, c3 = st.columns([1,2,1])
     filtro_data = c1.date_input("Data", datetime.today())
-    filtro_turno = c2.multiselect("Turno", list(HORARIOS_TURNO.keys()), default=list(HORARIOS_TURNO.keys()))
+    filtro_turno = c2.multiselect("Turno", ["Manhã", "Tarde", "Noite", "Integral"], default=["Manhã", "Tarde", "Noite", "Integral"])
     if c3.button("🔄 Atualizar"): st.cache_data.clear()
 
     df = carregar_dados()
