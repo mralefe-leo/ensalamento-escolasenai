@@ -13,7 +13,7 @@ import io
 # CONFIGURAÇÃO DA PÁGINA
 
 st.set_page_config(
-    page_title="Gestão de Salas | SENAI",
+    page_title="Gestão de Salas | SENAI HUB",
     page_icon="logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
