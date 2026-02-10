@@ -319,9 +319,15 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
 
     df_img = df_filtrado.copy()
 
+    # --- NOVO: ORDENAÇÃO ---
+    # Ordena primeiro pelo inicio do intervalo, depois pelo inicio da aula
+    # O 'na_position' garante que quem não tem intervalo (vazio) fique no final ou inicio conforme preferir
+    if 'inicio_intervalo' in df_img.columns:
+        df_img = df_img.sort_values(by=['inicio_intervalo', 'hora_inicio'], ascending=[True, True])
+
     # Intervalo formatado
     df_img['intervalo_fmt'] = df_img.apply(
-        lambda r: f"{str(r['inicio_intervalo'])}-{str(r['fim_intervalo'])}" if r['inicio_intervalo'] else "-",
+        lambda r: f"{str(r['inicio_intervalo'])}-{str(r['fim_intervalo'])}" if r['inicio_intervalo'] and str(r['inicio_intervalo']).strip() != "" else "-",
         axis=1
     )
 
@@ -331,22 +337,25 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
         axis=1
     )
 
+    # Dicionário de colunas (Nome no Banco : Nome na Imagem)
     colunas_map = {
         'turno': 'Turno',
         'situacao': 'Situação',
         'sala': 'Ambiente',
         'professor': 'Docente',
         'turma': 'Turma',
-        'qtd_alunos': 'Alunos',
+        'qtd_alunos': 'Alunos', # Garante que Alunos apareça
         'intervalo_fmt': 'Intervalo',
         'recursos': 'Recursos'
     }
 
+    # Filtra apenas as colunas que existem no dataframe para evitar erros
     cols_to_use = [c for c in colunas_map.keys() if c in df_img.columns]
     df_final = df_img[cols_to_use].rename(columns=colunas_map)
 
     # -------- FIGURA BASE --------
-    fig = plt.figure(figsize=(16, max(6, 2.5 + len(df_final) * 0.55)), dpi=300)
+    # Altura dinâmica baseada na quantidade de linhas
+    fig = plt.figure(figsize=(16, max(6, 3 + len(df_final) * 0.5)), dpi=300)
 
     # LOGO
     ax_logo = fig.add_axes([0, 0.86, 1, 0.08])
@@ -383,26 +392,30 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     )
 
     tabela.auto_set_font_size(False)
-    tabela.set_fontsize(9)
-    tabela.scale(1, 1.5)
+    tabela.set_fontsize(10) # Aumentei levemente a fonte
+    tabela.scale(1, 1.6) # Aumentei o espaçamento das linhas
 
-    # 🎯 Largura manual das colunas (em proporção)
+    # 🎯 Largura manual das colunas (Soma deve dar próximo de 1.0)
+    # Ajustei os pesos para caber 'Alunos' e 'Recursos'
     larguras = {
         'Turno': 0.08,
-        'Situação': 0.10,
-        'Ambiente': 0.10,
-        'Docente': 0.20,
-        'Turma': 0.24,
-        'Alunos': 0.08,
-        'Intervalo': 0.10,
-        'Recursos': 0.10
+        'Situação': 0.09,
+        'Ambiente': 0.08,
+        'Docente': 0.18,
+        'Turma': 0.22,
+        'Alunos': 0.06,
+        'Intervalo': 0.12,
+        'Recursos': 0.12
     }
 
+    # Aplica as larguras e cores
     for (r, c), cell in tabela.get_celld().items():
-        col_name = df_final.columns[c]
-
-        if col_name in larguras:
-            cell.set_width(larguras[col_name])
+        # Pega o nome da coluna atual pelo índice c
+        try:
+            col_name = df_final.columns[c]
+            if col_name in larguras:
+                cell.set_width(larguras[col_name])
+        except: pass
 
         cell.set_linewidth(0.5)
         cell.set_edgecolor("#cccccc")
@@ -419,7 +432,6 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     plt.close(fig)
 
     return buf
-
 
 
 
