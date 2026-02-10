@@ -580,8 +580,7 @@ with tab2:
                 'qtd_notebooks': 'Notebooks'
             })
             
-            # CONFIGURAÇÃO DE COLUNAS (O jeito moderno do Streamlit)
-            # format="%d" garante número inteiro na tela
+            
             st.dataframe(
                 df_display,
                 use_container_width=True,
@@ -589,7 +588,7 @@ with tab2:
                 column_config={
                     "Alunos": st.column_config.NumberColumn(
                         "Alunos",
-                        format="%d", # Força número inteiro visualmente
+                        format="%d", 
                     ),
                     "Chromebooks": st.column_config.NumberColumn(
                         "Chromebooks",
@@ -612,21 +611,21 @@ with tab2:
         else:
             st.info("Nenhum agendamento encontrado.")
 
-# TAB 3: COORDENAÇÃO (COM SEGURANÇA NA PLANILHA)
+# TAB 3: COORDENAÇÃO 
 
 with tab3:
     st.subheader("Gestão de Cadastros e Agendamentos")
     
-    # --- NOVA FUNCIONALIDADE: EXCLUSÃO DE AGENDAMENTOS ---
+    
     with st.expander("Remover Agendamentos", expanded=True):
         st.warning("Cuidado: A exclusão é permanente.")
         
-        # Filtros para encontrar a aula
+        
         col_del1, col_del2 = st.columns(2)
         data_del = col_del1.date_input("Filtrar Data", datetime.today(), key="data_del")
         turno_del = col_del2.selectbox("Filtrar Turno", ["Manhã", "Tarde", "Noite", "Integral"], key="turno_del")
         
-        # Carrega dados para exclusão
+        
         df_del = carregar_dados()
         
         if not df_del.empty:
@@ -669,7 +668,7 @@ with tab3:
                                 registro['hora_inicio'] == linha_dados['hora_inicio'] and
                                 registro['professor'] == linha_dados['professor']):
                                 
-                                linha_para_deletar = i + 2 # +1 do index 0, +1 do cabeçalho
+                                linha_para_deletar = i + 2 
                                 break
                         
                         if linha_para_deletar:
