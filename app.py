@@ -577,8 +577,87 @@ with tab2:
 
 # TAB 3: COORDENAÇÃO (COM SEGURANÇA NA PLANILHA)
 
+# TAB 3: COORDENAÇÃO (COM SEGURANÇA NA PLANILHA)
+
 with tab3:
-    st.subheader("Gestão de Cadastros")
+    st.subheader("Gestão de Cadastros e Agendamentos")
+    
+    # --- NOVA FUNCIONALIDADE: EXCLUSÃO DE AGENDAMENTOS ---
+    with st.expander("🗑️ Remover Agendamentos (Correção)", expanded=True):
+        st.warning("Cuidado: A exclusão é permanente.")
+        
+        # Filtros para encontrar a aula
+        col_del1, col_del2 = st.columns(2)
+        data_del = col_del1.date_input("Filtrar Data", datetime.today(), key="data_del")
+        turno_del = col_del2.selectbox("Filtrar Turno", ["Manhã", "Tarde", "Noite", "Integral"], key="turno_del")
+        
+        # Carrega dados para exclusão
+        df_del = carregar_dados()
+        
+        if not df_del.empty:
+            df_del['data'] = df_del['data'].astype(str)
+            # Filtra o dataframe pelo que foi selecionado
+            aulas_filtradas = df_del[
+                (df_del['data'] == str(data_del)) & 
+                (df_del['turno'] == turno_del)
+            ]
+            
+            if not aulas_filtradas.empty:
+                # Cria uma lista amigável para selecionar: "Sala - Professor (Horário)"
+                # O índice da lista (i) ajuda a achar a linha real depois
+                opcoes_exclusao = {
+                    f"{row['sala']} | {row['professor']} | {row['hora_inicio']} - {row['hora_fim']}": i 
+                    for i, row in aulas_filtradas.iterrows()
+                }
+                
+                escolha_exclusao = st.selectbox("Selecione o agendamento para EXCLUIR:", list(opcoes_exclusao.keys()))
+                
+                if st.button("❌ Confirmar Exclusão"):
+                    # Lógica para achar a linha correta no Google Sheets
+                    # O índice do DataFrame não é igual ao da Planilha (tem cabeçalho + filtro)
+                    # Vamos buscar pelo conteúdo exato para garantir
+                    try:
+                        ss = conectar_google_sheets()
+                        ws = ss.sheet1
+                        
+                        # Recupera os dados da linha selecionada no DF
+                        idx_df = opcoes_exclusao[escolha_exclusao]
+                        linha_dados = aulas_filtradas.loc[idx_df]
+                        
+                        # Procura a célula que contém a Data, Sala e Professor para garantir unicidade
+                        # Isso é mais seguro que tentar adivinhar o número da linha
+                        # Estratégia: Pegar todas as linhas da planilha e comparar
+                        todos_dados = ws.get_all_records()
+                        
+                        linha_para_deletar = None
+                        
+                        # Itera sobre a planilha real para achar o índice (+2 pois Sheet começa em 1 e tem Header)
+                        for i, registro in enumerate(todos_dados):
+                            # Compara campos chave
+                            if (str(registro['data']) == str(linha_dados['data']) and 
+                                registro['sala'] == linha_dados['sala'] and 
+                                registro['hora_inicio'] == linha_dados['hora_inicio'] and
+                                registro['professor'] == linha_dados['professor']):
+                                
+                                linha_para_deletar = i + 2 # +1 do index 0, +1 do cabeçalho
+                                break
+                        
+                        if linha_para_deletar:
+                            ws.delete_rows(linha_para_deletar)
+                            st.success(f"Agendamento removido com sucesso!")
+                            st.cache_data.clear()
+                            st.rerun()
+                        else:
+                            st.error("Erro ao localizar a linha na planilha. Tente atualizar a página.")
+                            
+                    except Exception as e:
+                        st.error(f"Erro de conexão ao excluir: {e}")
+            else:
+                st.info("Nenhum agendamento encontrado para esta Data/Turno.")
+        else:
+            st.info("Banco de dados vazio.")
+
+    st.markdown("---")
     st.info("Utilize esta área para alimentar as listas do sistema.")
     
     col_a, col_b, col_c = st.columns(3)
@@ -596,7 +675,7 @@ with tab3:
                         ws.append_row([novo_docente])
                         st.success("Docente salvo!")
                         st.cache_resource.clear() 
-                    except: st.error("Aba 'Docentes' não encontrada na planilha.")
+                    except: st.error("Aba 'Docentes' não encontrada.")
     
     # --- CADASTRO DE TURMAS ---
     with col_b:
@@ -611,7 +690,7 @@ with tab3:
                         ws.append_row([nova_turma])
                         st.success("Turma salva!")
                         st.cache_resource.clear()
-                    except: st.error("Aba 'Turmas' não encontrada na planilha.")
+                    except: st.error("Aba 'Turmas' não encontrada.")
 
     # --- CADASTRO DE SALAS ---
     with col_c:
@@ -626,9 +705,16 @@ with tab3:
                         ws.append_row([nova_sala])
                         st.success("Sala salva!")
                         st.cache_resource.clear()
-                    except: st.error("Aba 'Salas' não encontrada na planilha.")
+                    except: st.error("Aba 'Salas' não encontrada.")
     
     st.markdown("---")
+    
+    if st.checkbox("Visualizar listas cadastradas"):
+        ld = carregar_lista_auxiliar("Docentes")
+        lt = carregar_lista_auxiliar("Turmas")
+        ls = carregar_lista_auxiliar("Salas")
+        c1, c2, c3 = st.columns(3)
+        c1.write(ld); c2.write(lt); c3.write(ls)
     
     if st.checkbox("Visualizar listas cadastradas"):
         ld = carregar_lista_auxiliar("Docentes")
