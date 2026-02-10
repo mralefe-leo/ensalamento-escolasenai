@@ -468,6 +468,7 @@ with tab1:
             hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM)
             
             # Intervalo Visualmente Ajustado
+            st.markdown("<br>", unsafe_allow_html=True)
             ci1, ci2 = st.columns(2)
             with ci1:
                 st.markdown(
