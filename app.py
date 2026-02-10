@@ -318,8 +318,16 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     plt.rcParams['font.family'] = 'DejaVu Sans'
 
     df_img = df_filtrado.copy()
+
+    # Intervalo formatado
     df_img['intervalo_fmt'] = df_img.apply(
         lambda r: f"{str(r['inicio_intervalo'])}-{str(r['fim_intervalo'])}" if r['inicio_intervalo'] else "-",
+        axis=1
+    )
+
+    # Recursos unificados
+    df_img['recursos'] = df_img.apply(
+        lambda r: f"C:{int(r['qtd_chromebooks'])} | N:{int(r['qtd_notebooks'])}",
         axis=1
     )
 
@@ -329,21 +337,18 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
         'sala': 'Ambiente',
         'professor': 'Docente',
         'turma': 'Turma',
+        'qtd_alunos': 'Alunos',
         'intervalo_fmt': 'Intervalo',
-        'qtd_chromebooks': 'Chromebooks',
-        'qtd_notebooks': 'Notebooks'
+        'recursos': 'Recursos'
     }
 
     cols_to_use = [c for c in colunas_map.keys() if c in df_img.columns]
     df_final = df_img[cols_to_use].rename(columns=colunas_map)
 
     # -------- FIGURA BASE --------
-    linhas = len(df_final) + 6
     fig = plt.figure(figsize=(16, max(6, 2.5 + len(df_final) * 0.55)), dpi=300)
 
-    
-    #  BLOCO 1 – LOGO CENTRALIZADA
-    
+    # LOGO
     ax_logo = fig.add_axes([0, 0.86, 1, 0.08])
     ax_logo.axis('off')
     try:
@@ -352,17 +357,13 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     except:
         ax_logo.text(0.5, 0.5, "SENAI", fontsize=22, ha="center", va="center")
 
-    
-    #  BLOCO 2 – TÍTULO
-   
+    # TÍTULO
     ax_titulo = fig.add_axes([0, 0.74, 1, 0.08])
     ax_titulo.axis('off')
     ax_titulo.text(0.5, 0.5, "ENSALAMENTO DIÁRIO", fontsize=18, fontweight="bold",
                    ha="center", va="center", color="#004587")
 
-   
-    #  BLOCO 3 – DATA
-    
+    # DATA
     ax_data = fig.add_axes([0, 0.68, 1, 0.06])
     ax_data.axis('off')
     ax_data.text(0.5, 0.5,
@@ -370,10 +371,8 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
                  fontsize=12,
                  ha="center", va="center", color="#444")
 
-    
-    #  BLOCO 4 – TABELA
-    
-    ax_tab = fig.add_axes([0.03, 0.05, 0.94, 0.60])
+    # TABELA
+    ax_tab = fig.add_axes([0.02, 0.05, 0.96, 0.60])
     ax_tab.axis('off')
 
     tabela = ax_tab.table(
@@ -385,9 +384,26 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
 
     tabela.auto_set_font_size(False)
     tabela.set_fontsize(9)
-    tabela.scale(1, 1.4)
+    tabela.scale(1, 1.5)
+
+    # 🎯 Largura manual das colunas (em proporção)
+    larguras = {
+        'Turno': 0.08,
+        'Situação': 0.10,
+        'Ambiente': 0.10,
+        'Docente': 0.20,
+        'Turma': 0.24,
+        'Alunos': 0.08,
+        'Intervalo': 0.10,
+        'Recursos': 0.10
+    }
 
     for (r, c), cell in tabela.get_celld().items():
+        col_name = df_final.columns[c]
+
+        if col_name in larguras:
+            cell.set_width(larguras[col_name])
+
         cell.set_linewidth(0.5)
         cell.set_edgecolor("#cccccc")
 
@@ -397,13 +413,13 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
         else:
             cell.set_facecolor("#F7F9FC" if r % 2 == 0 else "white")
 
-    
     buf = io.BytesIO()
     plt.savefig(buf, format="png", bbox_inches="tight")
     buf.seek(0)
     plt.close(fig)
 
     return buf
+
 
 
 
