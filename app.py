@@ -716,9 +716,4 @@ with tab3:
         c1, c2, c3 = st.columns(3)
         c1.write(ld); c2.write(lt); c3.write(ls)
     
-    if st.checkbox("Visualizar listas cadastradas"):
-        ld = carregar_lista_auxiliar("Docentes")
-        lt = carregar_lista_auxiliar("Turmas")
-        ls = carregar_lista_auxiliar("Salas")
-        c1, c2, c3 = st.columns(3)
-        c1.write(ld); c2.write(lt); c3.write(ls)
+    
