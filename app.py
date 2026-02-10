@@ -232,7 +232,6 @@ def carregar_dados():
         df = pd.DataFrame(data)
         if not df.empty: df.columns = df.columns.str.lower().str.strip()
         
-        
         colunas = ['data', 'turno', 'situacao', 'hora_inicio', 'hora_fim', 'sala', 'professor', 'turma', 'data_registro', 'qtd_chromebooks', 'qtd_notebooks', 'inicio_intervalo', 'fim_intervalo', 'qtd_alunos']
         
         if df.empty: return pd.DataFrame(columns=colunas)
@@ -240,10 +239,11 @@ def carregar_dados():
         for col in colunas:
             if col not in df.columns: df[col] = 0 if 'qtd' in col else ''
             
-        df['qtd_chromebooks'] = pd.to_numeric(df['qtd_chromebooks'], errors='coerce').fillna(0)
-        df['qtd_notebooks'] = pd.to_numeric(df['qtd_notebooks'], errors='coerce').fillna(0)
+        df['qtd_chromebooks'] = pd.to_numeric(df['qtd_chromebooks'], errors='coerce').fillna(0).astype(int)
+        df['qtd_notebooks'] = pd.to_numeric(df['qtd_notebooks'], errors='coerce').fillna(0).astype(int)
         
-        df['qtd_alunos'] = pd.to_numeric(df['qtd_alunos'], errors='coerce').fillna(0)
+        # CORREÇÃO AQUI: .astype(int) remove as casas decimais (30.0 -> 30)
+        df['qtd_alunos'] = pd.to_numeric(df['qtd_alunos'], errors='coerce').fillna(0).astype(int)
         
         return df
     except: return pd.DataFrame()
@@ -541,7 +541,7 @@ with tab1:
                         st.cache_data.clear()
 
 
-# TAB 2: VISUALIZAÇÃO (COM ESTILO CENTRALIZADO)
+# TAB 2: VISUALIZAÇÃO (CORRIGIDA)
 
 with tab2:
     
@@ -558,7 +558,6 @@ with tab2:
         
         if not df_view.empty:
             
-            # Formatar intervalo para exibição
             df_view['intervalo_tela'] = df_view.apply(
                 lambda r: f"{str(r['inicio_intervalo'])}-{str(r['fim_intervalo'])}" 
                 if r['inicio_intervalo'] and str(r['inicio_intervalo']).strip() != "" 
@@ -566,10 +565,8 @@ with tab2:
                 axis=1
             )
 
-            # Selecionar colunas
             cols_view = ['hora_inicio', 'hora_fim', 'situacao', 'sala', 'professor', 'turma', 'qtd_alunos', 'intervalo_tela', 'qtd_chromebooks', 'qtd_notebooks']
             
-            # Criar um DataFrame "limpo" para exibição com nomes renomeados
             df_display = df_view[cols_view].rename(columns={
                 'hora_inicio': 'Início',
                 'hora_fim': 'Fim',
@@ -583,19 +580,26 @@ with tab2:
                 'qtd_notebooks': 'Notebooks'
             })
             
-            # --- AQUI ESTÁ O TRUQUE DE CENTRALIZAR ---
-            # Definimos quais colunas queremos centralizar
-            cols_center = ['Início', 'Fim', 'Situação', 'Ambiente', 'Turma', 'Alunos', 'Intervalo', 'Chromebooks', 'Notebooks']
-            
-            # Aplicamos o estilo. O subset define onde aplicar.
-            # 'Professor' ficará alinhado à esquerda (padrão)
+            # CONFIGURAÇÃO DE COLUNAS (O jeito moderno do Streamlit)
+            # format="%d" garante número inteiro na tela
             st.dataframe(
-                df_display.style.set_properties(
-                    **{'text-align': 'center'}, 
-                    subset=cols_center
-                ),
-                use_container_width=True, 
-                hide_index=True
+                df_display,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Alunos": st.column_config.NumberColumn(
+                        "Alunos",
+                        format="%d", # Força número inteiro visualmente
+                    ),
+                    "Chromebooks": st.column_config.NumberColumn(
+                        "Chromebooks",
+                        format="%d",
+                    ),
+                    "Notebooks": st.column_config.NumberColumn(
+                        "Notebooks",
+                        format="%d",
+                    )
+                }
             )
             
             st.markdown("###")
@@ -603,7 +607,8 @@ with tab2:
             buf = gerar_imagem_ensalamento(df_view, filtro_data)
             col_d1.download_button("📥 Baixar Relatório (PNG)", data=buf, file_name=f"Ensalamento_{filtro_data}.png", mime="image/png")
             
-            st.caption(f"Total Reservado: {df_view['qtd_chromebooks'].sum()} Chromebooks | {df_view['qtd_notebooks'].sum()} Notebooks | Total Alunos: {int(df_view['qtd_alunos'].sum())}")
+            total_alunos = int(df_view['qtd_alunos'].sum())
+            st.caption(f"Total Reservado: {df_view['qtd_chromebooks'].sum()} Chromebooks | {df_view['qtd_notebooks'].sum()} Notebooks | Total Alunos: {total_alunos}")
         else:
             st.info("Nenhum agendamento encontrado.")
 
