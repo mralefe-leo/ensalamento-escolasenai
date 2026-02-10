@@ -350,14 +350,13 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     cols_to_use = [c for c in colunas_map.keys() if c in df_img.columns]
     df_final = df_img[cols_to_use].rename(columns=colunas_map)
 
-    # 🔹 Ordem correta dos turnos
+    # Ordem correta dos turnos
     ordem_turnos = ["Manhã", "Tarde", "Noite"]
     df_final['Turno'] = pd.Categorical(df_final['Turno'], categories=ordem_turnos, ordered=True)
     df_final = df_final.sort_values(by=['Turno'])
 
-    # 🔹 Monta linhas com separadores + totais
+    # Monta linhas com separadores + totais
     linhas_formatadas = []
-
     primeiro_turno = True
 
     for turno in ordem_turnos:
@@ -369,11 +368,11 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
         total_turmas = len(df_turno)
         total_alunos = int(df_turno['Alunos'].sum())
 
-        # ➜ Só adiciona linha divisória a partir do segundo turno
+        # Só adiciona linha em branco a partir do segundo turno
         if not primeiro_turno:
             linhas_formatadas.append(["", "", "", "", "", "", "", ""])
 
-        # Linha de título do turno (mesclada)
+        # Linha de título do turno
         linhas_formatadas.append([
             f"{turno.upper()}  —  Turmas: {total_turmas} | Alunos: {total_alunos}",
             "", "", "", "", "", "", ""
@@ -382,8 +381,7 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
         for _, row in df_turno.iterrows():
             linhas_formatadas.append(list(row.values))
 
-    primeiro_turno = False
-
+        primeiro_turno = False  # <-- agora no lugar certo
 
     df_final_fmt = pd.DataFrame(linhas_formatadas, columns=df_final.columns)
 
@@ -428,7 +426,7 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     tabela.set_fontsize(9)
     tabela.scale(1, 1.5)
 
-    # 🎯 Largura manual das colunas
+    # Largura manual das colunas
     larguras = {
         'Turno': 0.08,
         'Situação': 0.10,
@@ -440,11 +438,11 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
         'Recursos': 0.10
     }
 
-    # 🎨 Cores por turno
+    # Cores por turno
     cores_turno = {
-        "MANHÃ": "#E3F2FD",   # azul claro
-        "TARDE": "#FFF3E0",   # laranja claro
-        "NOITE": "#E8F5E9"    # verde claro
+        "MANHÃ": "#E3F2FD",
+        "TARDE": "#FFF3E0",
+        "NOITE": "#E8F5E9"
     }
 
     total_cols = len(df_final_fmt.columns)
@@ -465,7 +463,6 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
         else:
             texto_primeira_coluna = tabela.get_celld()[(r, 0)].get_text().get_text().upper()
 
-            # 🔵 Linha de separação do turno (efeito "mesclado")
             for turno_nome, cor in cores_turno.items():
                 if texto_primeira_coluna.startswith(turno_nome):
                     cell.set_facecolor(cor)
@@ -487,6 +484,7 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     plt.close(fig)
 
     return buf
+
 
 
 
