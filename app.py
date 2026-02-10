@@ -36,7 +36,7 @@ if not st.session_state['logado']:
         if st.button("Entrar no Sistema"):
             
             try: senha_correta = st.secrets["senha_coordenacao"]
-            except: senha_correta = "admin" 
+            except: senha_correta = "#ESS2026" 
             
             if senha_input == senha_correta:
                 st.session_state['logado'] = True
