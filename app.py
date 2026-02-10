@@ -543,6 +543,8 @@ with tab1:
 
 # TAB 2: VISUALIZAÇÃO (CORRIGIDA)
 
+# TAB 2: VISUALIZAÇÃO (CENTRALIZAÇÃO VIA PANDAS STYLE)
+
 with tab2:
     
     c1, c2, c3 = st.columns([1,2,1])
@@ -580,26 +582,17 @@ with tab2:
                 'qtd_notebooks': 'Notebooks'
             })
             
-            # CONFIGURAÇÃO DE COLUNAS (O jeito moderno do Streamlit)
-            # format="%d" garante número inteiro na tela
+            # --- ESTILIZAÇÃO AVANÇADA (Centralizar + Sem Decimais) ---
+            # 1. format("{:.0f}"): Garante que os números numéricos não tenham vírgula
+            # 2. set_properties: Força o alinhamento ao centro para TODAS as colunas
+            # Obs: O Streamlit às vezes mantém o título da coluna alinhado ao padrão, mas o conteúdo centralizará.
+            
             st.dataframe(
-                df_display,
+                df_display.style.format(
+                    "{:.0f}", subset=["Alunos", "Chromebooks", "Notebooks"]
+                ).set_properties(**{'text-align': 'center'}),
                 use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Alunos": st.column_config.NumberColumn(
-                        "Alunos",
-                        format="%d", # Força número inteiro visualmente
-                    ),
-                    "Chromebooks": st.column_config.NumberColumn(
-                        "Chromebooks",
-                        format="%d",
-                    ),
-                    "Notebooks": st.column_config.NumberColumn(
-                        "Notebooks",
-                        format="%d",
-                    )
-                }
+                hide_index=True
             )
             
             st.markdown("###")
@@ -607,7 +600,9 @@ with tab2:
             buf = gerar_imagem_ensalamento(df_view, filtro_data)
             col_d1.download_button("📥 Baixar Relatório (PNG)", data=buf, file_name=f"Ensalamento_{filtro_data}.png", mime="image/png")
             
-            total_alunos = int(df_view['qtd_alunos'].sum())
+            # Verifica se as colunas existem antes de somar para evitar erro
+            total_alunos = int(df_view['qtd_alunos'].sum()) if 'qtd_alunos' in df_view.columns else 0
+            
             st.caption(f"Total Reservado: {df_view['qtd_chromebooks'].sum()} Chromebooks | {df_view['qtd_notebooks'].sum()} Notebooks | Total Alunos: {total_alunos}")
         else:
             st.info("Nenhum agendamento encontrado.")
