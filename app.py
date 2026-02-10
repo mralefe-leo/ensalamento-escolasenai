@@ -492,31 +492,37 @@ with tab1:
         
         # Botão de confirmação
         if st.form_submit_button("Confirmar Agendamento"):
+            
             if not professor or not turma or not sala:
                 st.warning("Verifique se Docente, Turma e Sala estão selecionados.")
             else:
-                # Conversão para validação
+                
                 obj_inicio = datetime.strptime(hora_inicio, "%H:%M").time()
                 obj_fim = datetime.strptime(hora_fim, "%H:%M").time()
                 
-                df_check = carregar_dados()
-                conflito, msg_c = verificar_conflito_sala(df_check, sala, data, obj_inicio, obj_fim)
-                recurso_ok, msg_r = verificar_disponibilidade_recursos(df_check, data, obj_inicio, obj_fim, qtd_chrome, qtd_note)
                 
-                if conflito or not recurso_ok:
-                    if conflito: st.error(f"❌ {msg_c}")
-                    if not recurso_ok: 
-                        with st.container(): st.error(f"❌ Indisponibilidade de Recursos:\n{msg_r}")
+                if obj_fim <= obj_inicio:
+                    st.error("❌ Erro de Lógica: O horário de FIM deve ser maior que o INÍCIO.")
                 else:
-                    ss = conectar_google_sheets()
-                    sheet = ss.sheet1
-                    sheet.append_row([
-                        str(data), turno, situacao, hora_inicio, hora_fim,
-                        sala, professor, turma, str(datetime.now()),
-                        qtd_chrome, qtd_note, inicio_intervalo, fim_intervalo
-                    ])
-                    st.success("✅ Agendado com sucesso!")
-                    st.cache_data.clear()
+                    df_check = carregar_dados()
+                    conflito, msg_c = verificar_conflito_sala(df_check, sala, data, obj_inicio, obj_fim)
+                    recurso_ok, msg_r = verificar_disponibilidade_recursos(df_check, data, obj_inicio, obj_fim, qtd_chrome, qtd_note)
+                    
+                    if conflito or not recurso_ok:
+                        if conflito: st.error(f"❌ {msg_c}")
+                        if not recurso_ok: 
+                            with st.container(): st.error(f"❌ Indisponibilidade de Recursos:\n{msg_r}")
+                    else:
+                        ss = conectar_google_sheets()
+                        sheet = ss.sheet1
+                        
+                        sheet.append_row([
+                            str(data), turno, situacao, hora_inicio, hora_fim,
+                            str(sala).upper(), str(professor).upper(), str(turma).upper(), str(datetime.now()),
+                            qtd_chrome, qtd_note, inicio_intervalo, fim_intervalo
+                        ])
+                        st.success("✅ Agendado com sucesso!")
+                        st.cache_data.clear()
 
 
 # TAB 2: VISUALIZAÇÃO (ATUALIZADO COM INTERVALO)
