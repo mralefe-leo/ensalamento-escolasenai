@@ -541,7 +541,7 @@ with tab1:
                         st.cache_data.clear()
 
 
-# TAB 2: VISUALIZAÇÃO (USANDO TABELA ESTÁTICA PARA CENTRALIZAR)
+# TAB 2: VISUALIZAÇÃO (CORRIGIDA)
 
 with tab2:
     
@@ -558,7 +558,6 @@ with tab2:
         
         if not df_view.empty:
             
-            # Formatação do Intervalo
             df_view['intervalo_tela'] = df_view.apply(
                 lambda r: f"{str(r['inicio_intervalo'])}-{str(r['fim_intervalo'])}" 
                 if r['inicio_intervalo'] and str(r['inicio_intervalo']).strip() != "" 
@@ -581,32 +580,34 @@ with tab2:
                 'qtd_notebooks': 'Notebooks'
             })
             
-            # --- CONSTRUÇÃO DO ESTILO (Centralização) ---
-            # 1. format: Garante zero casas decimais
-            # 2. hide: Esconde o índice (0, 1, 2...)
-            # 3. set_properties: Centraliza o texto das células
-            # 4. set_table_styles: Centraliza os Cabeçalhos (Título das colunas)
-            
-            styler = df_display.style.format("{:.0f}", subset=["Alunos", "Chromebooks", "Notebooks"]) \
-                                     .hide(axis="index") \
-                                     .set_properties(**{'text-align': 'center'}) \
-                                     .set_table_styles([
-                                         {'selector': 'th', 'props': [('text-align', 'center')]},
-                                         {'selector': 'td', 'props': [('text-align', 'center')]}
-                                     ])
-
-            # Usamos st.table em vez de st.dataframe. 
-            # Ele obedece a centralização, mas perde a barra de rolagem interna (mostra tudo de uma vez).
-            st.table(styler)
+            # CONFIGURAÇÃO DE COLUNAS (O jeito moderno do Streamlit)
+            # format="%d" garante número inteiro na tela
+            st.dataframe(
+                df_display,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Alunos": st.column_config.NumberColumn(
+                        "Alunos",
+                        format="%d", # Força número inteiro visualmente
+                    ),
+                    "Chromebooks": st.column_config.NumberColumn(
+                        "Chromebooks",
+                        format="%d",
+                    ),
+                    "Notebooks": st.column_config.NumberColumn(
+                        "Notebooks",
+                        format="%d",
+                    )
+                }
+            )
             
             st.markdown("###")
             col_d1, _ = st.columns([1,3])
             buf = gerar_imagem_ensalamento(df_view, filtro_data)
             col_d1.download_button("📥 Baixar Relatório (PNG)", data=buf, file_name=f"Ensalamento_{filtro_data}.png", mime="image/png")
             
-            # Soma segura
-            total_alunos = int(df_view['qtd_alunos'].sum()) if 'qtd_alunos' in df_view.columns else 0
-            
+            total_alunos = int(df_view['qtd_alunos'].sum())
             st.caption(f"Total Reservado: {df_view['qtd_chromebooks'].sum()} Chromebooks | {df_view['qtd_notebooks'].sum()} Notebooks | Total Alunos: {total_alunos}")
         else:
             st.info("Nenhum agendamento encontrado.")
