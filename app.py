@@ -315,11 +315,6 @@ def verificar_disponibilidade_recursos(df, data_agendamento, inicio_novo, fim_no
     return True, ""
 
 def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
-    import io
-    import matplotlib.pyplot as plt
-    import matplotlib.image as mpimg
-    import pandas as pd
-
     plt.rcParams['font.family'] = 'DejaVu Sans'
 
     df_img = df_filtrado.copy()
@@ -350,43 +345,8 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     cols_to_use = [c for c in colunas_map.keys() if c in df_img.columns]
     df_final = df_img[cols_to_use].rename(columns=colunas_map)
 
-    # Ordem correta dos turnos
-    ordem_turnos = ["Manhã", "Tarde", "Noite"]
-    df_final['Turno'] = pd.Categorical(df_final['Turno'], categories=ordem_turnos, ordered=True)
-    df_final = df_final.sort_values(by=['Turno'])
-
-    # Monta linhas com separadores + totais
-    linhas_formatadas = []
-    primeiro_turno = True
-
-    for turno in ordem_turnos:
-        df_turno = df_final[df_final['Turno'] == turno]
-
-        if df_turno.empty:
-            continue
-
-        total_turmas = len(df_turno)
-        total_alunos = int(df_turno['Alunos'].sum())
-
-        # Só adiciona linha em branco a partir do segundo turno
-        if not primeiro_turno:
-            linhas_formatadas.append(["", "", "", "", "", "", "", ""])
-
-        # Linha de título do turno
-        linhas_formatadas.append([
-            f"{turno.upper()}  —  Turmas: {total_turmas} | Alunos: {total_alunos}",
-            "", "", "", "", "", "", ""
-        ])
-
-        for _, row in df_turno.iterrows():
-            linhas_formatadas.append(list(row.values))
-
-        primeiro_turno = False  # <-- agora no lugar certo
-
-    df_final_fmt = pd.DataFrame(linhas_formatadas, columns=df_final.columns)
-
     # -------- FIGURA BASE --------
-    fig = plt.figure(figsize=(16, max(6, 2.5 + len(df_final_fmt) * 0.55)), dpi=300)
+    fig = plt.figure(figsize=(16, max(6, 2.5 + len(df_final) * 0.55)), dpi=300)
 
     # LOGO
     ax_logo = fig.add_axes([0, 0.86, 1, 0.08])
@@ -416,8 +376,8 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     ax_tab.axis('off')
 
     tabela = ax_tab.table(
-        cellText=df_final_fmt.values,
-        colLabels=df_final_fmt.columns,
+        cellText=df_final.values,
+        colLabels=df_final.columns,
         loc='upper center',
         cellLoc='center'
     )
@@ -426,7 +386,7 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     tabela.set_fontsize(9)
     tabela.scale(1, 1.5)
 
-    # Largura manual das colunas
+    # 🎯 Largura manual das colunas (em proporção)
     larguras = {
         'Turno': 0.08,
         'Situação': 0.10,
@@ -438,45 +398,20 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
         'Recursos': 0.10
     }
 
-    # Cores por turno
-    cores_turno = {
-        "MANHÃ": "#E3F2FD",
-        "TARDE": "#FFF3E0",
-        "NOITE": "#E8F5E9"
-    }
-
-    total_cols = len(df_final_fmt.columns)
-    col_central = total_cols // 2
-
     for (r, c), cell in tabela.get_celld().items():
-        col_name = df_final_fmt.columns[c]
+        col_name = df_final.columns[c]
 
         if col_name in larguras:
             cell.set_width(larguras[col_name])
 
         cell.set_linewidth(0.5)
-        cell.set_edgecolor("#cfd8dc")
+        cell.set_edgecolor("#cccccc")
 
         if r == 0:
             cell.set_facecolor("#004587")
-            cell.set_text_props(color="white", weight="bold", ha="center", va="center")
+            cell.set_text_props(color="white", weight="bold")
         else:
-            texto_primeira_coluna = tabela.get_celld()[(r, 0)].get_text().get_text().upper()
-
-            for turno_nome, cor in cores_turno.items():
-                if texto_primeira_coluna.startswith(turno_nome):
-                    cell.set_facecolor(cor)
-                    cell.set_edgecolor(cor)
-
-                    if c == col_central:
-                        cell.get_text().set_text(texto_primeira_coluna)
-                        cell.set_text_props(weight="bold", color="#0D47A1", ha="center")
-                    else:
-                        cell.get_text().set_text("")
-                    break
-            else:
-                cell.set_facecolor("#F7F9FC" if r % 2 == 0 else "white")
-                cell.set_text_props(ha="center", va="center")
+            cell.set_facecolor("#F7F9FC" if r % 2 == 0 else "white")
 
     buf = io.BytesIO()
     plt.savefig(buf, format="png", bbox_inches="tight")
@@ -484,8 +419,6 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     plt.close(fig)
 
     return buf
-
-
 
 
 
