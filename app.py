@@ -264,16 +264,41 @@ def carregar_lista_auxiliar(nome_aba):
 
 def verificar_conflito_sala(df, sala, data_agendamento, inicio_novo, fim_novo):
     if df.empty: return False, ""
-    df['data'] = df['data'].astype(str)
-    conflitos = df[(df['sala'] == sala) & (df['data'] == str(data_agendamento))]
+    
+    # --- CORREÇÃO: PADRONIZAÇÃO DE TEXTO ---
+    # Converte a coluna 'data' para string e remove espaços
+    df['data'] = df['data'].astype(str).str.strip()
+    
+    # Cria uma coluna temporária de sala em MAIÚSCULO para comparação
+    df['sala_norm'] = df['sala'].astype(str).str.strip().str.upper()
+    sala_check = str(sala).strip().upper()
+    
+    # Filtra usando a sala normalizada e a data
+    conflitos = df[
+        (df['sala_norm'] == sala_check) & 
+        (df['data'] == str(data_agendamento))
+    ]
+    
     for _, row in conflitos.iterrows():
         try:
-            str_ini, str_fim = str(row['hora_inicio'])[:5], str(row['hora_fim'])[:5]
+            # Garante que pegamos apenas o HH:MM, mesmo que venha "07:30:00"
+            str_ini = str(row['hora_inicio']).strip()
+            str_fim = str(row['hora_fim']).strip()
+            
+            # Se o horário for curto (ex: 7:30), ajusta formatação, se longo corta os segundos
+            if len(str_ini) > 5: str_ini = str_ini[:5]
+            if len(str_fim) > 5: str_fim = str_fim[:5]
+
             ini_exist = datetime.strptime(str_ini, "%H:%M").time()
             fim_exist = datetime.strptime(str_fim, "%H:%M").time()
+            
+            # Lógica de Sobreposição de Horário
+            # (Novo Inicio < Fim Existente) E (Novo Fim > Inicio Existente)
             if (inicio_novo < fim_exist) and (fim_novo > ini_exist):
                 return True, f"Sala ocupada por {row['professor']} ({str_ini}-{str_fim})"
-        except: continue
+        except: 
+            continue
+            
     return False, ""
 
 def verificar_disponibilidade_recursos(df, data_agendamento, inicio_novo, fim_novo, qtd_chrome, qtd_note):
