@@ -358,6 +358,8 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     # 🔹 Monta linhas com separadores + totais
     linhas_formatadas = []
 
+    primeiro_turno = True
+
     for turno in ordem_turnos:
         df_turno = df_final[df_final['Turno'] == turno]
 
@@ -367,7 +369,11 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
         total_turmas = len(df_turno)
         total_alunos = int(df_turno['Alunos'].sum())
 
-        # Linha de separação do turno (visual "mesclado")
+        # ➜ Só adiciona linha divisória a partir do segundo turno
+        if not primeiro_turno:
+            linhas_formatadas.append(["", "", "", "", "", "", "", ""])
+
+        # Linha de título do turno (mesclada)
         linhas_formatadas.append([
             f"{turno.upper()}  —  Turmas: {total_turmas} | Alunos: {total_alunos}",
             "", "", "", "", "", "", ""
@@ -375,6 +381,9 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
 
         for _, row in df_turno.iterrows():
             linhas_formatadas.append(list(row.values))
+
+    primeiro_turno = False
+
 
     df_final_fmt = pd.DataFrame(linhas_formatadas, columns=df_final.columns)
 
