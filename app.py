@@ -583,7 +583,7 @@ with tab3:
     st.subheader("Gestão de Cadastros e Agendamentos")
     
     # --- NOVA FUNCIONALIDADE: EXCLUSÃO DE AGENDAMENTOS ---
-    with st.expander("Remover Agendamentos (Correção)", expanded=True):
+    with st.expander("Remover Agendamentos", expanded=True):
         st.warning("Cuidado: A exclusão é permanente.")
         
         # Filtros para encontrar a aula
