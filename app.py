@@ -431,6 +431,8 @@ tab1, tab2, tab3 = st.tabs(["Novo Agendamento", "Visualizar Agenda", "Coordenaç
 # TAB 1: AGENDAMENTO 
  
 
+# TAB 1: AGENDAMENTO 
+
 with tab1:
     # Carrega listas atualizadas do banco
     lista_docentes = carregar_lista_auxiliar("Docentes")
@@ -447,9 +449,13 @@ with tab1:
             turma = st.selectbox("Turma/Curso", lista_turmas) if lista_turmas else st.text_input("Turma (Cadastre na aba Coordenação)")
             sala = st.selectbox("Ambiente / Sala", lista_salas) if lista_salas else st.warning("Cadastre salas na aba Coordenação")
             
-            
-           
+            # Espaçador para alinhar
+            st.markdown("<br>", unsafe_allow_html=True) 
             data = st.date_input("Data da Aula")
+            
+            # --- NOVO CAMPO: QUANTIDADE DE ALUNOS ---
+            st.markdown("<br>", unsafe_allow_html=True)
+            qtd_alunos = st.number_input("Quantidade de Alunos", min_value=0, step=1, help="Número aproximado de alunos")
         
         # --- COLUNA DA DIREITA (c2) ---
         with c2:
@@ -461,10 +467,9 @@ with tab1:
             hora_inicio = ch1.selectbox("Início Aula", OPCOES_INICIO)
             hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM)
             
-            
+            # Intervalo Visualmente Ajustado
             ci1, ci2 = st.columns(2)
             with ci1:
-            
                 st.markdown(
                     """
                     <p style='margin-bottom: 7px; font-size: 14px; font-weight: bold;'>Intervalo</p>
@@ -492,15 +497,15 @@ with tab1:
         
         # Botão de confirmação
         if st.form_submit_button("Confirmar Agendamento"):
-            
+            # 1. Validação de campos vazios
             if not professor or not turma or not sala:
-                st.warning("Verifique se Docente, Turma e Sala estão selecionados.")
+                st.warning("⚠️ Verifique se Docente, Turma e Sala estão selecionados.")
             else:
-                
+                # Conversão para validação de lógica
                 obj_inicio = datetime.strptime(hora_inicio, "%H:%M").time()
                 obj_fim = datetime.strptime(hora_fim, "%H:%M").time()
                 
-                
+                # 2. Validação de Lógica de Horário (Fim > Início)
                 if obj_fim <= obj_inicio:
                     st.error("❌ Erro de Lógica: O horário de FIM deve ser maior que o INÍCIO.")
                 else:
@@ -516,10 +521,15 @@ with tab1:
                         ss = conectar_google_sheets()
                         sheet = ss.sheet1
                         
+                        # 3. Salvamento com Normalização (.upper) e Novo Campo (qtd_alunos)
                         sheet.append_row([
                             str(data), turno, situacao, hora_inicio, hora_fim,
-                            str(sala).upper(), str(professor).upper(), str(turma).upper(), str(datetime.now()),
-                            qtd_chrome, qtd_note, inicio_intervalo, fim_intervalo
+                            str(sala).upper(),      # Normalizado
+                            str(professor).upper(), # Normalizado
+                            str(turma).upper(),     # Normalizado
+                            str(datetime.now()),
+                            qtd_chrome, qtd_note, inicio_intervalo, fim_intervalo,
+                            qtd_alunos              # Novo Campo no final
                         ])
                         st.success("✅ Agendado com sucesso!")
                         st.cache_data.clear()
