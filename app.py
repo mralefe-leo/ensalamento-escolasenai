@@ -541,7 +541,7 @@ with tab1:
                         st.cache_data.clear()
 
 
-# TAB 2: VISUALIZAÇÃO (ATUALIZADO COM QTD ALUNOS)
+# TAB 2: VISUALIZAÇÃO (COM ESTILO CENTRALIZADO)
 
 with tab2:
     
@@ -557,7 +557,8 @@ with tab2:
         df_view = df[(df['data'] == str(filtro_data)) & (df['turno'].isin(filtro_turno))].sort_values('hora_inicio')
         
         if not df_view.empty:
-                        
+            
+            # Formatar intervalo para exibição
             df_view['intervalo_tela'] = df_view.apply(
                 lambda r: f"{str(r['inicio_intervalo'])}-{str(r['fim_intervalo'])}" 
                 if r['inicio_intervalo'] and str(r['inicio_intervalo']).strip() != "" 
@@ -565,42 +566,46 @@ with tab2:
                 axis=1
             )
 
-            # ADICIONADO: 'qtd_alunos' na lista de visualização
+            # Selecionar colunas
             cols_view = ['hora_inicio', 'hora_fim', 'situacao', 'sala', 'professor', 'turma', 'qtd_alunos', 'intervalo_tela', 'qtd_chromebooks', 'qtd_notebooks']
             
-           
+            # Criar um DataFrame "limpo" para exibição com nomes renomeados
+            df_display = df_view[cols_view].rename(columns={
+                'hora_inicio': 'Início',
+                'hora_fim': 'Fim',
+                'situacao': 'Situação',
+                'sala': 'Ambiente',
+                'professor': 'Professor',
+                'turma': 'Turma',
+                'qtd_alunos': 'Alunos',
+                'intervalo_tela': 'Intervalo', 
+                'qtd_chromebooks': 'Chromebooks',
+                'qtd_notebooks': 'Notebooks'
+            })
+            
+            # --- AQUI ESTÁ O TRUQUE DE CENTRALIZAR ---
+            # Definimos quais colunas queremos centralizar
+            cols_center = ['Início', 'Fim', 'Situação', 'Ambiente', 'Turma', 'Alunos', 'Intervalo', 'Chromebooks', 'Notebooks']
+            
+            # Aplicamos o estilo. O subset define onde aplicar.
+            # 'Professor' ficará alinhado à esquerda (padrão)
             st.dataframe(
-                df_view[cols_view].rename(columns={
-                    'hora_inicio': 'Início',
-                    'hora_fim': 'Fim',
-                    'situacao': 'Situação',
-                    'sala': 'Ambiente',
-                    'professor': 'Professor',
-                    'turma': 'Turma',
-                    'qtd_alunos': 'Alunos', # Nome bonitinho para o cabeçalho
-                    'intervalo_tela': 'Intervalo', 
-                    'qtd_chromebooks': 'Chromebooks',
-                    'qtd_notebooks': 'Notebooks'
-                }),
-                use_container_width=True, hide_index=True
+                df_display.style.set_properties(
+                    **{'text-align': 'center'}, 
+                    subset=cols_center
+                ),
+                use_container_width=True, 
+                hide_index=True
             )
             
-         
             st.markdown("###")
             col_d1, _ = st.columns([1,3])
-            # A imagem gerada (função gerar_imagem_ensalamento) ainda não tem essa coluna, 
-            # se quiser adicionar lá também, me avise! Por enquanto só tabela.
             buf = gerar_imagem_ensalamento(df_view, filtro_data)
             col_d1.download_button("📥 Baixar Relatório (PNG)", data=buf, file_name=f"Ensalamento_{filtro_data}.png", mime="image/png")
             
-        
             st.caption(f"Total Reservado: {df_view['qtd_chromebooks'].sum()} Chromebooks | {df_view['qtd_notebooks'].sum()} Notebooks | Total Alunos: {int(df_view['qtd_alunos'].sum())}")
         else:
             st.info("Nenhum agendamento encontrado.")
-    
-
-
-
 
 # TAB 3: COORDENAÇÃO (COM SEGURANÇA NA PLANILHA)
 
