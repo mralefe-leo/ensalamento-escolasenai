@@ -569,27 +569,22 @@ with tab2:
             cols_view = ['hora_inicio', 'hora_fim', 'situacao', 'sala', 'professor', 'turma', 'qtd_alunos', 'intervalo_tela', 'qtd_chromebooks', 'qtd_notebooks']
             
            
-            df_exibir = df_view[cols_view].rename(columns={
-                'hora_inicio': 'Início',
-                'hora_fim': 'Fim',
-                'situacao': 'Situação',
-                'sala': 'Ambiente',
-                'professor': 'Professor',
-                'turma': 'Turma',
-                'qtd_alunos': 'Alunos',
-                'intervalo_tela': 'Intervalo', 
-                'qtd_chromebooks': 'Chromebooks',
-                'qtd_notebooks': 'Notebooks'
-            })
-            colunas_centralizar = ['Início', 'Fim', 'Situação', 'Alunos', 'Chromebooks', 'Notebooks']
             st.dataframe(
-                df_exibir.style.set_properties(
-                    subset=colunas_centralizar,      # Apenas nestas colunas
-                    **{'text-align': 'center'}       # Comando CSS para centralizar
-                ),
-                use_container_width=True, 
-                hide_index=True
+                df_view[cols_view].rename(columns={
+                    'hora_inicio': 'Início',
+                    'hora_fim': 'Fim',
+                    'situacao': 'Situação',
+                    'sala': 'Ambiente',
+                    'professor': 'Professor',
+                    'turma': 'Turma',
+                    'qtd_alunos': 'Alunos', # Nome bonitinho para o cabeçalho
+                    'intervalo_tela': 'Intervalo', 
+                    'qtd_chromebooks': 'Chromebooks',
+                    'qtd_notebooks': 'Notebooks'
+                }),
+                use_container_width=True, hide_index=True
             )
+            
          
             st.markdown("###")
             col_d1, _ = st.columns([1,3])
