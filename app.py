@@ -242,7 +242,7 @@ def carregar_dados():
         df['qtd_chromebooks'] = pd.to_numeric(df['qtd_chromebooks'], errors='coerce').fillna(0).astype(int)
         df['qtd_notebooks'] = pd.to_numeric(df['qtd_notebooks'], errors='coerce').fillna(0).astype(int)
         
-        # CORREÇÃO AQUI: .astype(int) remove as casas decimais (30.0 -> 30)
+        
         df['qtd_alunos'] = pd.to_numeric(df['qtd_alunos'], errors='coerce').fillna(0).astype(int)
         
         return df
@@ -319,9 +319,7 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
 
     df_img = df_filtrado.copy()
 
-    # --- NOVO: ORDENAÇÃO ---
-    # Ordena primeiro pelo inicio do intervalo, depois pelo inicio da aula
-    # O 'na_position' garante que quem não tem intervalo (vazio) fique no final ou inicio conforme preferir
+    
     if 'inicio_intervalo' in df_img.columns:
         df_img = df_img.sort_values(by=['inicio_intervalo', 'hora_inicio'], ascending=[True, True])
 
@@ -337,24 +335,23 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
         axis=1
     )
 
-    # Dicionário de colunas (Nome no Banco : Nome na Imagem)
+    
     colunas_map = {
         'turno': 'Turno',
         'situacao': 'Situação',
         'sala': 'Ambiente',
         'professor': 'Docente',
         'turma': 'Turma',
-        'qtd_alunos': 'Alunos', # Garante que Alunos apareça
+        'qtd_alunos': 'Alunos', 
         'intervalo_fmt': 'Intervalo',
         'recursos': 'Recursos'
     }
 
-    # Filtra apenas as colunas que existem no dataframe para evitar erros
+    
     cols_to_use = [c for c in colunas_map.keys() if c in df_img.columns]
     df_final = df_img[cols_to_use].rename(columns=colunas_map)
 
-    # -------- FIGURA BASE --------
-    # Altura dinâmica baseada na quantidade de linhas
+    
     fig = plt.figure(figsize=(16, max(6, 3 + len(df_final) * 0.5)), dpi=300)
 
     # LOGO
@@ -392,11 +389,10 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     )
 
     tabela.auto_set_font_size(False)
-    tabela.set_fontsize(10) # Aumentei levemente a fonte
-    tabela.scale(1, 1.6) # Aumentei o espaçamento das linhas
+    tabela.set_fontsize(10) 
+    tabela.scale(1, 1.6) 
 
-    # 🎯 Largura manual das colunas (Soma deve dar próximo de 1.0)
-    # Ajustei os pesos para caber 'Alunos' e 'Recursos'
+    
     larguras = {
         'Turno': 0.08,
         'Situação': 0.09,
@@ -408,9 +404,9 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
         'Recursos': 0.12
     }
 
-    # Aplica as larguras e cores
+    
     for (r, c), cell in tabela.get_celld().items():
-        # Pega o nome da coluna atual pelo índice c
+        
         try:
             col_name = df_final.columns[c]
             if col_name in larguras:
@@ -464,10 +460,8 @@ tab1, tab2, tab3 = st.tabs(["Novo Agendamento", "Visualizar Agenda", "Coordenaç
 # TAB 1: AGENDAMENTO 
  
 
-# TAB 1: AGENDAMENTO 
-
 with tab1:
-    # Carrega listas atualizadas do banco
+    
     lista_docentes = carregar_lista_auxiliar("Docentes")
     lista_turmas = carregar_lista_auxiliar("Turmas")
     lista_salas = carregar_lista_auxiliar("Salas")
@@ -476,17 +470,17 @@ with tab1:
         st.subheader("Dados do Agendamento")
         c1, c2 = st.columns(2)
         
-        # --- COLUNA DA ESQUERDA (c1) ---
+        
         with c1:
             professor = st.selectbox("Docente", lista_docentes) if lista_docentes else st.text_input("Docente (Cadastre na aba Coordenação)")
             turma = st.selectbox("Turma/Curso", lista_turmas) if lista_turmas else st.text_input("Turma (Cadastre na aba Coordenação)")
             sala = st.selectbox("Ambiente / Sala", lista_salas) if lista_salas else st.warning("Cadastre salas na aba Coordenação")
             
-            # Espaçador para alinhar
+            
             st.markdown("<br>", unsafe_allow_html=True) 
             data = st.date_input("Data da Aula")
             
-            # --- NOVO CAMPO: QUANTIDADE DE ALUNOS ---
+            
             st.markdown("<br>", unsafe_allow_html=True)
             qtd_alunos = st.number_input("Quantidade de Alunos", min_value=0, step=1, help="Número aproximado de alunos")
         
@@ -495,12 +489,12 @@ with tab1:
             turno = st.selectbox("Turno", ["Manhã", "Tarde", "Noite", "Integral"])
             situacao = st.radio("Período", ["Turno Inteiro", "1º Horário", "2º Horário"], horizontal=True)
             
-            # Horários da Aula
+            
             ch1, ch2 = st.columns(2)
             hora_inicio = ch1.selectbox("Início Aula", OPCOES_INICIO)
             hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM)
             
-            # Intervalo Visualmente Ajustado
+            
             st.markdown("<br>", unsafe_allow_html=True)
             ci1, ci2 = st.columns(2)
             with ci1:
@@ -512,7 +506,7 @@ with tab1:
                 )
                 sel_intervalo = st.selectbox("Selecione intervalo", OPCOES_INTERVALO, label_visibility="collapsed")
             
-            # Lógica de separação do intervalo
+            
             if sel_intervalo and "–" in sel_intervalo:
                 partes = sel_intervalo.split("–")
                 inicio_intervalo = partes[0].strip()
@@ -531,15 +525,15 @@ with tab1:
         
         # Botão de confirmação
         if st.form_submit_button("Confirmar Agendamento"):
-            # 1. Validação de campos vazios
+            
             if not professor or not turma or not sala:
                 st.warning("⚠️ Verifique se Docente, Turma e Sala estão selecionados.")
             else:
-                # Conversão para validação de lógica
+                
                 obj_inicio = datetime.strptime(hora_inicio, "%H:%M").time()
                 obj_fim = datetime.strptime(hora_fim, "%H:%M").time()
                 
-                # 2. Validação de Lógica de Horário (Fim > Início)
+                
                 if obj_fim <= obj_inicio:
                     st.error("❌ Erro de Lógica: O horário de FIM deve ser maior que o INÍCIO.")
                 else:
@@ -555,15 +549,15 @@ with tab1:
                         ss = conectar_google_sheets()
                         sheet = ss.sheet1
                         
-                        # 3. Salvamento com Normalização (.upper) e Novo Campo (qtd_alunos)
+                        
                         sheet.append_row([
                             str(data), turno, situacao, hora_inicio, hora_fim,
-                            str(sala).upper(),      # Normalizado
-                            str(professor).upper(), # Normalizado
-                            str(turma).upper(),     # Normalizado
+                            str(sala).upper(),      
+                            str(professor).upper(), 
+                            str(turma).upper(),     
                             str(datetime.now()),
                             qtd_chrome, qtd_note, inicio_intervalo, fim_intervalo,
-                            qtd_alunos              # Novo Campo no final
+                            qtd_alunos              
                         ])
                         st.success("✅ Agendado com sucesso!")
                         st.cache_data.clear()
