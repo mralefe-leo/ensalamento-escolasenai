@@ -232,7 +232,9 @@ def carregar_dados():
         df = pd.DataFrame(data)
         if not df.empty: df.columns = df.columns.str.lower().str.strip()
         
-        colunas = ['data', 'turno', 'situacao', 'hora_inicio', 'hora_fim', 'sala', 'professor', 'turma', 'data_registro', 'qtd_chromebooks', 'qtd_notebooks', 'inicio_intervalo', 'fim_intervalo']
+        
+        colunas = ['data', 'turno', 'situacao', 'hora_inicio', 'hora_fim', 'sala', 'professor', 'turma', 'data_registro', 'qtd_chromebooks', 'qtd_notebooks', 'inicio_intervalo', 'fim_intervalo', 'qtd_alunos']
+        
         if df.empty: return pd.DataFrame(columns=colunas)
         
         for col in colunas:
@@ -240,6 +242,9 @@ def carregar_dados():
             
         df['qtd_chromebooks'] = pd.to_numeric(df['qtd_chromebooks'], errors='coerce').fillna(0)
         df['qtd_notebooks'] = pd.to_numeric(df['qtd_notebooks'], errors='coerce').fillna(0)
+        
+        df['qtd_alunos'] = pd.to_numeric(df['qtd_alunos'], errors='coerce').fillna(0)
+        
         return df
     except: return pd.DataFrame()
 
@@ -536,7 +541,7 @@ with tab1:
                         st.cache_data.clear()
 
 
-# TAB 2: VISUALIZAÇÃO (ATUALIZADO COM INTERVALO)
+# TAB 2: VISUALIZAÇÃO (ATUALIZADO COM QTD ALUNOS)
 
 with tab2:
     
@@ -552,7 +557,7 @@ with tab2:
         df_view = df[(df['data'] == str(filtro_data)) & (df['turno'].isin(filtro_turno))].sort_values('hora_inicio')
         
         if not df_view.empty:
-                       
+                        
             df_view['intervalo_tela'] = df_view.apply(
                 lambda r: f"{str(r['inicio_intervalo'])}-{str(r['fim_intervalo'])}" 
                 if r['inicio_intervalo'] and str(r['inicio_intervalo']).strip() != "" 
@@ -560,8 +565,8 @@ with tab2:
                 axis=1
             )
 
-            
-            cols_view = ['hora_inicio', 'hora_fim', 'situacao', 'sala', 'professor', 'turma', 'intervalo_tela', 'qtd_chromebooks', 'qtd_notebooks']
+            # ADICIONADO: 'qtd_alunos' na lista de visualização
+            cols_view = ['hora_inicio', 'hora_fim', 'situacao', 'sala', 'professor', 'turma', 'qtd_alunos', 'intervalo_tela', 'qtd_chromebooks', 'qtd_notebooks']
             
            
             st.dataframe(
@@ -572,6 +577,7 @@ with tab2:
                     'sala': 'Ambiente',
                     'professor': 'Professor',
                     'turma': 'Turma',
+                    'qtd_alunos': 'Alunos', # Nome bonitinho para o cabeçalho
                     'intervalo_tela': 'Intervalo', 
                     'qtd_chromebooks': 'Chromebooks',
                     'qtd_notebooks': 'Notebooks'
@@ -582,11 +588,13 @@ with tab2:
          
             st.markdown("###")
             col_d1, _ = st.columns([1,3])
+            # A imagem gerada (função gerar_imagem_ensalamento) ainda não tem essa coluna, 
+            # se quiser adicionar lá também, me avise! Por enquanto só tabela.
             buf = gerar_imagem_ensalamento(df_view, filtro_data)
             col_d1.download_button("📥 Baixar Relatório (PNG)", data=buf, file_name=f"Ensalamento_{filtro_data}.png", mime="image/png")
             
         
-            st.caption(f"Total Reservado: {df_view['qtd_chromebooks'].sum()} Chromebooks | {df_view['qtd_notebooks'].sum()} Notebooks")
+            st.caption(f"Total Reservado: {df_view['qtd_chromebooks'].sum()} Chromebooks | {df_view['qtd_notebooks'].sum()} Notebooks | Total Alunos: {int(df_view['qtd_alunos'].sum())}")
         else:
             st.info("Nenhum agendamento encontrado.")
     
