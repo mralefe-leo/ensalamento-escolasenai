@@ -18,6 +18,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 if 'logado' not in st.session_state:
     st.session_state['logado'] = False
 
@@ -35,16 +36,22 @@ if not st.session_state['logado']:
         
         if st.button("Entrar no Sistema"):
             
-            try: senha_correta = st.secrets["senha_coordenacao"]
-            except: senha_correta = "#ESS2026" 
-            
-            if senha_input == senha_correta:
-                st.session_state['logado'] = True
-                st.rerun() 
+           
+            if "senha_coordenacao" in st.secrets:
+                senha_correta = st.secrets["senha_coordenacao"]
+                
+                if senha_input == senha_correta:
+                    st.session_state['logado'] = True
+                    st.rerun() 
+                else:
+                    st.error("Senha incorreta.")
             else:
-                st.error("Senha incorreta.")
+                # Se esquecerem de configurar o cofre, o sistema avisa, mas não deixa entrar.
+                st.error("⚠️ ERRO DE SISTEMA: Senha não configurada no cofre do servidor. Contate o suporte.")
     
     st.stop() 
+
+# ... (Daqui para baixo segue o código normal: Constantes, CSS, etc.)
 
 # CONSTANTES DE ESTOQUE
 
