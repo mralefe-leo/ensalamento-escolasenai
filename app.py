@@ -584,7 +584,6 @@ with tab1:
                             qtd_alunos              
                         ])
                         st.success("✅ Agendado com sucesso!")
-                        carregar_dados.clear() 
                         import time
                         time.sleep(1.5)
                         st.rerun()
@@ -660,7 +659,7 @@ with tab2:
         else:
             st.info("Nenhum agendamento encontrado.")
 
-# TAB 3: COORDENAÇÃO 
+
 
 # TAB 3: COORDENAÇÃO 
 
@@ -716,8 +715,7 @@ with tab3:
                         if linha_para_deletar:
                             ws.delete_rows(linha_para_deletar)
                             st.success(f"Agendamento removido com sucesso!")
-                            # CORREÇÃO AQUI
-                            carregar_dados.clear()
+                            
                             import time; time.sleep(1.5)
                             st.rerun()
                         else:
