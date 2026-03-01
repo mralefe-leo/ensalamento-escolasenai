@@ -656,7 +656,7 @@ with tab2:
                 }
             )
             
-            st.markdown("###")
+            
             col_d1, _ = st.columns([1,3])
             buf = gerar_imagem_ensalamento(df_view, filtro_data)
             col_d1.download_button("📥 Baixar Relatório (PNG)", data=buf, file_name=f"Ensalamento_{filtro_data}.png", mime="image/png")
