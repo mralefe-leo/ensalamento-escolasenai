@@ -248,12 +248,11 @@ def carregar_dados():
         return df
     except: return pd.DataFrame()
 
+@st.cache_data(ttl=600)
 def carregar_lista_auxiliar(nome_aba):
     try:
         ss = conectar_google_sheets()
-        
         worksheet = ss.worksheet(nome_aba)
-       
         valores = worksheet.col_values(1)
         if valores:
             return sorted(valores[1:]) 
@@ -586,6 +585,7 @@ with tab1:
                         ])
                         st.success("✅ Agendado com sucesso!")
                         st.cache_data.clear()
+                        st.rerun()
 
 
 # TAB 2: VISUALIZAÇÃO (CORRIGIDA)
@@ -739,6 +739,7 @@ with tab3:
     col_a, col_b, col_c = st.columns(3)
     
     # --- CADASTRO DE DOCENTES ---
+    # Exemplo para Docentes 
     with col_a:
         st.markdown("**🧑‍🏫 Docentes**")
         with st.form("add_docente", clear_on_submit=True):
@@ -750,7 +751,8 @@ with tab3:
                         ws = ss.worksheet("Docentes")
                         ws.append_row([novo_docente])
                         st.success("Docente salvo!")
-                        st.cache_resource.clear() 
+                        st.cache_data.clear() 
+                        st.rerun() 
                     except: st.error("Aba 'Docentes' não encontrada.")
     
     # --- CADASTRO DE TURMAS ---
