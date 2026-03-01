@@ -584,7 +584,9 @@ with tab1:
                             qtd_alunos              
                         ])
                         st.success("✅ Agendado com sucesso!")
-                        st.cache_data.clear()
+                        carregar_dados.clear() 
+                        import time
+                        time.sleep(1.5)
                         st.rerun()
 
 
@@ -660,18 +662,17 @@ with tab2:
 
 # TAB 3: COORDENAÇÃO 
 
+# TAB 3: COORDENAÇÃO 
+
 with tab3:
     st.subheader("Gestão de Cadastros e Agendamentos")
-    
     
     with st.expander("Remover Agendamentos", expanded=True):
         st.warning("Cuidado: A exclusão é permanente.")
         
-        
         col_del1, col_del2 = st.columns(2)
         data_del = col_del1.date_input("Filtrar Data", datetime.today(), key="data_del")
         turno_del = col_del2.selectbox("Filtrar Turno", ["Manhã", "Tarde", "Noite", "Integral"], key="turno_del")
-        
         
         df_del = carregar_dados()
         
@@ -693,23 +694,17 @@ with tab3:
                 escolha_exclusao = st.selectbox("Selecione o agendamento para EXCLUIR:", list(opcoes_exclusao.keys()))
                 
                 if st.button("❌ Confirmar Exclusão"):
-                    
                     try:
                         ss = conectar_google_sheets()
                         ws = ss.sheet1
                         
-                        
                         idx_df = opcoes_exclusao[escolha_exclusao]
                         linha_dados = aulas_filtradas.loc[idx_df]
                         
-                       
                         todos_dados = ws.get_all_records()
-                        
                         linha_para_deletar = None
                         
-                        
                         for i, registro in enumerate(todos_dados):
-                            
                             if (str(registro['data']) == str(linha_dados['data']) and 
                                 registro['sala'] == linha_dados['sala'] and 
                                 registro['hora_inicio'] == linha_dados['hora_inicio'] and
@@ -721,7 +716,9 @@ with tab3:
                         if linha_para_deletar:
                             ws.delete_rows(linha_para_deletar)
                             st.success(f"Agendamento removido com sucesso!")
-                            st.cache_data.clear()
+                            # CORREÇÃO AQUI
+                            carregar_dados.clear()
+                            import time; time.sleep(1.5)
                             st.rerun()
                         else:
                             st.error("Erro ao localizar a linha na planilha. Tente atualizar a página.")
@@ -739,7 +736,6 @@ with tab3:
     col_a, col_b, col_c = st.columns(3)
     
     # --- CADASTRO DE DOCENTES ---
-    # Exemplo para Docentes 
     with col_a:
         st.markdown("**🧑‍🏫 Docentes**")
         with st.form("add_docente", clear_on_submit=True):
@@ -750,8 +746,10 @@ with tab3:
                     try:
                         ws = ss.worksheet("Docentes")
                         ws.append_row([novo_docente])
-                        st.success("Docente salvo!")
-                        st.cache_data.clear() 
+                        st.success("Docente salvo com sucesso!")
+                        # CORREÇÃO AQUI: Limpa SÓ a lista auxiliar
+                        carregar_lista_auxiliar.clear()
+                        import time; time.sleep(1.5)
                         st.rerun() 
                     except: st.error("Aba 'Docentes' não encontrada.")
     
@@ -766,8 +764,11 @@ with tab3:
                     try:
                         ws = ss.worksheet("Turmas")
                         ws.append_row([nova_turma])
-                        st.success("Turma salva!")
-                        st.cache_resource.clear()
+                        st.success("Turma salva com sucesso!")
+                        # CORREÇÃO AQUI
+                        carregar_lista_auxiliar.clear()
+                        import time; time.sleep(1.5)
+                        st.rerun()
                     except: st.error("Aba 'Turmas' não encontrada.")
 
     # --- CADASTRO DE SALAS ---
@@ -781,8 +782,11 @@ with tab3:
                     try:
                         ws = ss.worksheet("Salas")
                         ws.append_row([nova_sala])
-                        st.success("Sala salva!")
-                        st.cache_resource.clear()
+                        st.success("Sala salva com sucesso!")
+                        # CORREÇÃO AQUI
+                        carregar_lista_auxiliar.clear()
+                        import time; time.sleep(1.5)
+                        st.rerun()
                     except: st.error("Aba 'Salas' não encontrada.")
     
     st.markdown("---")
@@ -793,5 +797,3 @@ with tab3:
         ls = carregar_lista_auxiliar("Salas")
         c1, c2, c3 = st.columns(3)
         c1.write(ld); c2.write(lt); c3.write(ls)
-    
-    
