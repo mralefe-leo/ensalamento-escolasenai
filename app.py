@@ -1,20 +1,19 @@
 import streamlit as st
 import pandas as pd
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-from datetime import datetime, time
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-import io
+from datetime import datetime
+import plotly.express as px
+
+from modules.database import carregar_dados, carregar_lista_auxiliar, conectar_google_sheets
+from modules.logic import verificar_conflito_sala, verificar_disponibilidade_recursos, TOTAL_CHROMEBOOKS, TOTAL_NOTEBOOKS
+from modules.relatorio import gerar_imagem_ensalamento
+
 
 
 # CONFIGURAÇÃO DA PÁGINA
 
 st.set_page_config(
     page_title="Gestão de Salas | SENAI HUB",
-    page_icon="logo.png",
+    page_icon="assets/logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -24,173 +23,61 @@ if 'logado' not in st.session_state:
 
 if not st.session_state['logado']:
     
-    col1, col2, col3 = st.columns([1,2,1])
+    
+    st.markdown("""
+        <style>
+            [data-testid="stSidebar"] {display: none;}
+            [data-testid="collapsedControl"] {display: none;}
+        </style>
+    """, unsafe_allow_html=True)
+    
+    
+    col1, col2, col3 = st.columns([1, 1.2, 1])
+    
     with col2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        try: st.image("logo.png", use_column_width=True) 
-        except: st.title("🔐 Acesso Restrito")
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
         
-        st.info("Este sistema é exclusivo para uso interno.")
         
-        senha_input = st.text_input("Digite a senha de acesso", type="password")
-        
-        if st.button("Entrar no Sistema"):
+        with st.form("form_login"):
             
-           
-            if "senha_coordenacao" in st.secrets:
-                senha_correta = st.secrets["senha_coordenacao"]
+            try: 
                 
-                if senha_input == senha_correta:
-                    st.session_state['logado'] = True
-                    st.rerun() 
+                st.image("assets/logo.png", use_container_width=True) 
+            except: 
+                st.markdown("<h2 style='text-align: center; color: #004587; margin-bottom: 0;'>SENAI HUB</h2>", unsafe_allow_html=True)
+            
+            st.markdown("<p style='text-align: center; color: #666; font-size: 15px; margin-top: 0;'>Gestão de Salas • Acesso Restrito</p>", unsafe_allow_html=True)
+            
+            st.info("👋 Olá! Insira sua credencial para acessar o painel.")
+            
+            
+            senha_input = st.text_input("Senha de Acesso", type="password", placeholder="Digite a senha...")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            submit = st.form_submit_button("Entrar no Sistema", use_container_width=True)
+            
+            if submit:
+                if "senha_coordenacao" in st.secrets:
+                    senha_correta = st.secrets["senha_coordenacao"]
+                    
+                    if senha_input == senha_correta:
+                        st.session_state['logado'] = True
+                        st.rerun() 
+                    else:
+                        st.error("❌ Senha incorreta.")
                 else:
-                    st.error("Senha incorreta.")
-            else:
-                # Se esquecerem de configurar o cofre, o sistema avisa, mas não deixa entrar.
-                st.error("⚠️ ERRO DE SISTEMA: Senha não configurada no cofre do servidor. Contate o suporte.")
+                    st.error("⚠️ ERRO DE SISTEMA: Senha não configurada no cofre do servidor.")
     
     st.stop() 
 
-# ... (Daqui para baixo segue o código normal: Constantes, CSS, etc.)
 
-# CONSTANTES DE ESTOQUE
-
-TOTAL_CHROMEBOOKS = 34
-TOTAL_NOTEBOOKS = 11
-
-
-# CSS – IDENTIDADE VISUAL SENAI
-
-st.markdown("""
-<style>
-     
-            
-    /* 1. LAYOUT */    
-    /* Sobe o conteúdo para o topo */
-    div.block-container {
-        padding-top: 2rem !important;
-        padding-bottom: 3rem !important;
-    }
-    
-    /* Remove o fundo do cabeçalho padrão */
-    header[data-testid="stHeader"] {
-        background: transparent !important;
-    }
-
-    /* Garante fundo transparente nas abas */
-    .stTabs [data-baseweb="tab-list"], 
-    .stTabs [data-baseweb="tab"],
-    [data-baseweb="tab-panel"] {
-        background-color: transparent !important;
-    }
-
-    /* 2. ESTILOS DO SEU TEMA */
-
-    /* Fonte base */
-    html, body, [class*="css"] {
-        font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
-    }
-
-    /* Sidebar - Mantendo seu Azul e Texto Preto */
-    [data-testid="stSidebar"] {
-        background: #fffff; 
-    }
-    [data-testid="stSidebar"] * {
-        color: #e94d16 !important;
-        
-    }
-
-    /* Header Personalizado */
-    .header-senai {
-        background: #2b78c5;
-        padding: 24px 32px;
-        border-radius: 12px;
-        margin-bottom: 24px;
-        color: white;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .header-senai h1 { margin: 0; font-size: 2.2rem; font-weight: 700; }
-    .header-senai p { margin-top: 5px; font-size: 1.1rem; opacity: 0.9; }
-
-    
-    [data-testid="stForm"] {
-        background-color: var(--secondary-background-color); /* Adapta cor automaticamente */
-        padding: 24px;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border: 1px solid rgba(128,128,128, 0.2);
-    }
-
-    /* Ajuste de Botões */
-    div.stButton > button {
-        background-color: #2b78c5; 
-        color: white;
-        border: none;
-        font-weight: bold;
-        width: 100%;
-        border-radius: 6px;
-        padding: 0.5rem 1rem;
-        transition: all 0.3s;
-    }
-    div.stButton > button:hover {
-        background-color: #e0e0e0;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        color: #2b78c5; 
-    }
-
-    /* Tabelas */
-    [data-testid="stDataFrame"] {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-    }
-
-    /* CONFIGURAÇÃO DAS TABS (ABAS) */
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
-    
-    .stTabs [data-baseweb="tab"] {
-        height: auto;
-        white-space: pre-wrap;
-        background-color: transparent !important; 
-        gap: 1px;
-        padding: 10px 25px;
-        color: #2b78c5;
-        font-size: 20px !important; 
-        font-weight: bold;
-        border: 1px solid rgba(128,128,128, 0.2);
-        border-bottom: none;
-        border-radius: 8px 8px 0 0;
-    }
-
-    /* Aba Selecionada */
-    .stTabs [aria-selected="true"] {
-        background-color: #2b78c5 !important;
-        color: white !important;
-    }
-
-    /* FIX BOTÃO IMAGEM (Mantendo o Vermelho apenas aqui para destaque, ou mude para azul se preferir) */
-    [data-testid="stSidebar"] [data-testid="stImage"] button {
-        background-color: white !important;
-        border: 2px solid #2b78c5 !important; /* Mudei para seu Azul */
-        border-radius: 50% !important;
-        width: 32px !important;
-        height: 32px !important;
-        opacity: 1 !important;
-    }
-    /* Ícone Azul */
-    [data-testid="stSidebar"] [data-testid="stImage"] button svg {
-        /* Filtro para gerar cor azul aproximada */
-        filter: invert(33%) sepia(99%) saturate(1637%) hue-rotate(193deg) brightness(91%) contrast(90%) !important;
-        transform: scale(0.9);
-    }
-    
-</style>
-""", unsafe_allow_html=True)
+with open("style/style.css", encoding="utf-8") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
 # LISTAS DE DADOS
 
-
-# --- NOVAS CONSTANTES DE HORÁRIOS ---
 OPCOES_INICIO = ["07:30", "13:00", "13:30", "18:00", "18:30"]
 OPCOES_FIM = ["11:00", "11:30", "16:00", "17:00", "17:30", "21:50"]
 
@@ -206,271 +93,13 @@ OPCOES_INTERVALO = [
     "20:05 – 20:25"
 ]
 
-
-
-
-@st.cache_resource
-def conectar_google_sheets():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = None
-    
-    
-    if "gcp_service_account" in st.secrets:
-        try:
-            creds_dict = dict(st.secrets["gcp_service_account"])
-            if "private_key" in creds_dict: 
-                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        except: pass
-    
-    
-    if not creds:
-        try:
-            creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-        except: st.error("Erro de credenciais"); st.stop()
-
-    
-    return gspread.authorize(creds).open("sistema_ensalamento_db")
-
-def carregar_dados():
-    try:
-        sheet = conectar_google_sheets().sheet1
-        data = sheet.get_all_records()
-        df = pd.DataFrame(data)
-        if not df.empty: df.columns = df.columns.str.lower().str.strip()
-        
-        colunas = ['data', 'turno', 'situacao', 'hora_inicio', 'hora_fim', 'sala', 'professor', 'turma', 'data_registro', 'qtd_chromebooks', 'qtd_notebooks', 'inicio_intervalo', 'fim_intervalo', 'qtd_alunos']
-        
-        if df.empty: return pd.DataFrame(columns=colunas)
-        
-        for col in colunas:
-            if col not in df.columns: df[col] = 0 if 'qtd' in col else ''
-            
-        df['qtd_chromebooks'] = pd.to_numeric(df['qtd_chromebooks'], errors='coerce').fillna(0).astype(int)
-        df['qtd_notebooks'] = pd.to_numeric(df['qtd_notebooks'], errors='coerce').fillna(0).astype(int)
-        
-        
-        df['qtd_alunos'] = pd.to_numeric(df['qtd_alunos'], errors='coerce').fillna(0).astype(int)
-        
-        return df
-    except: return pd.DataFrame()
-
-@st.cache_data(ttl=600)
-def carregar_lista_auxiliar(nome_aba):
-    try:
-        ss = conectar_google_sheets()
-        worksheet = ss.worksheet(nome_aba)
-        valores = worksheet.col_values(1)
-        if valores:
-            return sorted(valores[1:]) 
-        return []
-    except: return []
-
-# LÓGICA DE NEGÓCIO
-
-def verificar_conflito_sala(df, sala, data_agendamento, inicio_novo, fim_novo):
-    if df.empty: return False, ""
-    
-    # --- CORREÇÃO: PADRONIZAÇÃO DE TEXTO ---
-    # Converte a coluna 'data' para string e remove espaços
-    df['data'] = df['data'].astype(str).str.strip()
-    
-    # Cria uma coluna temporária de sala em MAIÚSCULO para comparação
-    df['sala_norm'] = df['sala'].astype(str).str.strip().str.upper()
-    sala_check = str(sala).strip().upper()
-    
-    # Filtra usando a sala normalizada e a data
-    conflitos = df[
-        (df['sala_norm'] == sala_check) & 
-        (df['data'] == str(data_agendamento))
-    ]
-    
-    for _, row in conflitos.iterrows():
-        try:
-            # Garante que pegamos apenas o HH:MM, mesmo que venha "07:30:00"
-            str_ini = str(row['hora_inicio']).strip()
-            str_fim = str(row['hora_fim']).strip()
-            
-            # Se o horário for curto (ex: 7:30), ajusta formatação, se longo corta os segundos
-            if len(str_ini) > 5: str_ini = str_ini[:5]
-            if len(str_fim) > 5: str_fim = str_fim[:5]
-
-            ini_exist = datetime.strptime(str_ini, "%H:%M").time()
-            fim_exist = datetime.strptime(str_fim, "%H:%M").time()
-            
-            # Lógica de Sobreposição de Horário
-            # (Novo Inicio < Fim Existente) E (Novo Fim > Inicio Existente)
-            if (inicio_novo < fim_exist) and (fim_novo > ini_exist):
-                return True, f"Sala ocupada por {row['professor']} ({str_ini}-{str_fim})"
-        except: 
-            continue
-            
-    return False, ""
-
-def verificar_disponibilidade_recursos(df, data_agendamento, inicio_novo, fim_novo, qtd_chrome, qtd_note):
-    if qtd_chrome == 0 and qtd_note == 0: return True, ""
-    if df.empty: return True, ""
-    
-    df['data'] = df['data'].astype(str)
-    agendamentos = df[df['data'] == str(data_agendamento)]
-    chrome_uso, note_uso = 0, 0
-    
-    
-    for _, row in agendamentos.iterrows():
-        try:
-            str_ini, str_fim = str(row['hora_inicio'])[:5], str(row['hora_fim'])[:5]
-            ini_exist = datetime.strptime(str_ini, "%H:%M").time()
-            fim_exist = datetime.strptime(str_fim, "%H:%M").time()
-            
-            
-            if (inicio_novo < fim_exist) and (fim_novo > ini_exist):
-                chrome_uso += int(row['qtd_chromebooks'])
-                note_uso += int(row['qtd_notebooks'])
-        except: continue
-    
-    
-    erros_estoque = []
-    
-    saldo_chrome = TOTAL_CHROMEBOOKS - chrome_uso
-    if qtd_chrome > saldo_chrome:
-        erros_estoque.append(f"- Chromebooks: Pedido {qtd_chrome} | Disponível: {saldo_chrome}")
-        
-    saldo_note = TOTAL_NOTEBOOKS - note_uso
-    if qtd_note > saldo_note:
-        erros_estoque.append(f"- Notebooks: Pedido {qtd_note} | Disponível: {saldo_note}")
-        
-    
-    if len(erros_estoque) > 0:
-        return False, "\n".join(erros_estoque)
-        
-    return True, ""
-
-def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
-    plt.rcParams['font.family'] = 'DejaVu Sans'
-
-    df_img = df_filtrado.copy()
-
-    
-    if 'inicio_intervalo' in df_img.columns:
-        df_img = df_img.sort_values(by=['inicio_intervalo', 'hora_inicio'], ascending=[True, True])
-
-    # Intervalo formatado
-    df_img['intervalo_fmt'] = df_img.apply(
-        lambda r: f"{str(r['inicio_intervalo'])}-{str(r['fim_intervalo'])}" if r['inicio_intervalo'] and str(r['inicio_intervalo']).strip() != "" else "-",
-        axis=1
-    )
-
-    # Recursos unificados
-    df_img['recursos'] = df_img.apply(
-        lambda r: f"C:{int(r['qtd_chromebooks'])} | N:{int(r['qtd_notebooks'])}",
-        axis=1
-    )
-
-    
-    colunas_map = {
-        'turno': 'Turno',
-        'situacao': 'Situação',
-        'sala': 'Ambiente',
-        'professor': 'Docente',
-        'turma': 'Turma',
-        'qtd_alunos': 'Alunos', 
-        'intervalo_fmt': 'Intervalo',
-        'recursos': 'Recursos'
-    }
-
-    
-    cols_to_use = [c for c in colunas_map.keys() if c in df_img.columns]
-    df_final = df_img[cols_to_use].rename(columns=colunas_map)
-
-    
-    fig = plt.figure(figsize=(16, max(6, 3 + len(df_final) * 0.5)), dpi=300)
-
-    # LOGO
-    ax_logo = fig.add_axes([0, 0.86, 1, 0.08])
-    ax_logo.axis('off')
-    try:
-        logo = mpimg.imread("logo.png")
-        ax_logo.imshow(logo)
-    except:
-        ax_logo.text(0.5, 0.5, "SENAI", fontsize=22, ha="center", va="center")
-
-    # TÍTULO
-    ax_titulo = fig.add_axes([0, 0.74, 1, 0.08])
-    ax_titulo.axis('off')
-    ax_titulo.text(0.5, 0.5, "ENSALAMENTO DIÁRIO", fontsize=18, fontweight="bold",
-                   ha="center", va="center", color="#004587")
-
-    # DATA
-    ax_data = fig.add_axes([0, 0.68, 1, 0.06])
-    ax_data.axis('off')
-    ax_data.text(0.5, 0.5,
-                 f"Data: {data_selecionada.strftime('%d/%m/%Y')}",
-                 fontsize=12,
-                 ha="center", va="center", color="#444")
-
-    # TABELA
-    ax_tab = fig.add_axes([0.02, 0.05, 0.96, 0.60])
-    ax_tab.axis('off')
-
-    tabela = ax_tab.table(
-        cellText=df_final.values,
-        colLabels=df_final.columns,
-        loc='upper center',
-        cellLoc='center'
-    )
-
-    tabela.auto_set_font_size(False)
-    tabela.set_fontsize(10) 
-    tabela.scale(1, 1.6) 
-
-    
-    larguras = {
-        'Turno': 0.08,
-        'Situação': 0.09,
-        'Ambiente': 0.08,
-        'Docente': 0.18,
-        'Turma': 0.22,
-        'Alunos': 0.06,
-        'Intervalo': 0.12,
-        'Recursos': 0.12
-    }
-
-    
-    for (r, c), cell in tabela.get_celld().items():
-        
-        try:
-            col_name = df_final.columns[c]
-            if col_name in larguras:
-                cell.set_width(larguras[col_name])
-        except: pass
-
-        cell.set_linewidth(0.5)
-        cell.set_edgecolor("#cccccc")
-
-        if r == 0:
-            cell.set_facecolor("#004587")
-            cell.set_text_props(color="white", weight="bold")
-        else:
-            cell.set_facecolor("#F7F9FC" if r % 2 == 0 else "white")
-
-    buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight")
-    buf.seek(0)
-    plt.close(fig)
-
-    return buf
-
-
-
-# INTERFACE SIDEBAR
-
 with st.sidebar:
     st.markdown("<br>", unsafe_allow_html=True)
-    try: st.image("logo.png", use_container_width=True)
+    try: st.image("assets/logo.png", use_container_width=True)
     except: pass
     st.markdown("---")
     try:
-        st.image("1.png", use_container_width=True)
+        st.image("assets/1.png", use_container_width=True)
         
     except: pass
     st.caption("Sistema de Gestão v1.0")
@@ -485,7 +114,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["Novo Agendamento", "Visualizar Agenda", "Coordenação"])
+tab1, tab2, tab3, tab4 = st.tabs(["Novo Agendamento", "Visualizar Agenda", "Coordenação", "Dashboard"])
 
 
 # TAB 1: AGENDAMENTO 
@@ -555,7 +184,7 @@ with tab1:
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Botão de confirmação
-        if st.form_submit_button("Confirmar Agendamento"):
+        if st.form_submit_button("Confirmar Agendamento", type="primary", use_container_width=True):
             
             if not professor or not turma or not sala:
                 st.warning("⚠️ Verifique se Docente, Turma e Sala estão selecionados.")
@@ -802,3 +431,69 @@ with tab3:
         ls = carregar_lista_auxiliar("Salas")
         c1, c2, c3 = st.columns(3)
         c1.write(ld); c2.write(lt); c3.write(ls)
+
+# TAB 4: DASHBOARD INTERATIVO
+
+with tab4:
+    st.markdown("<br>", unsafe_allow_html=True)
+    c_dash1, c_dash2, c_dash3 = st.columns([1, 2, 1])
+    
+    # Filtro de data centralizado
+    data_dash = c_dash2.date_input("📅 Selecione a Data para Análise", datetime.today(), key="data_dash")
+    
+    df_dash = carregar_dados()
+    
+    if not df_dash.empty:
+        df_dash['data'] = df_dash['data'].astype(str)
+        df_dia = df_dash[df_dash['data'] == str(data_dash)]
+        
+        if not df_dia.empty:
+            st.markdown("---")
+            
+            # --- 1. INDICADORES (KPIs) ---
+            kpi1, kpi2, kpi3 = st.columns(3)
+            total_alunos = int(df_dia['qtd_alunos'].sum())
+            uso_chrome = int(df_dia['qtd_chromebooks'].sum())
+            uso_note = int(df_dia['qtd_notebooks'].sum())
+            
+            kpi1.metric("👥 Total de Alunos Atendidos", total_alunos)
+            kpi2.metric("💻 Chromebooks Reservados", f"{uso_chrome} / {TOTAL_CHROMEBOOKS}")
+            kpi3.metric("🖥️ Notebooks Reservados", f"{uso_note} / {TOTAL_NOTEBOOKS}")
+            
+            st.markdown("<br><br>", unsafe_allow_html=True)
+            
+            # --- 2. GRÁFICOS INTERATIVOS ---
+            col_graf1, col_graf2 = st.columns(2)
+            
+            with col_graf1:
+                # Gráfico de Barras: Uso por Ambiente
+                uso_salas = df_dia['sala'].value_counts().reset_index()
+                uso_salas.columns = ['Ambiente', 'Reservas']
+                
+                fig_salas = px.bar(
+                    uso_salas, x='Ambiente', y='Reservas', 
+                    title="Ambientes Mais Utilizados",
+                    color='Reservas', 
+                    color_continuous_scale='Blues' # Usa paleta de azul SENAI
+                )
+                # Oculta fundo para ficar clean no modo escuro
+                fig_salas.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") 
+                st.plotly_chart(fig_salas, use_container_width=True)
+
+            with col_graf2:
+                # Gráfico de Rosca: Alunos por Turno
+                alunos_turno = df_dia.groupby('turno')['qtd_alunos'].sum().reset_index()
+                
+                fig_turnos = px.pie(
+                    alunos_turno, names='turno', values='qtd_alunos', 
+                    title="Distribuição de Alunos por Turno",
+                    hole=0.4, # Deixa com formato de rosca (Donut)
+                    color_discrete_sequence=['#2b78c5', '#e94d16', '#198754', '#ffc107']
+                )
+                fig_turnos.update_layout(paper_bgcolor="rgba(0,0,0,0)")
+                st.plotly_chart(fig_turnos, use_container_width=True)
+                
+        else:
+            st.info("Nenhum agendamento registrado para esta data. Os gráficos aparecerão aqui quando houver reservas.")
+    else:
+        st.info("O banco de dados está vazio.")

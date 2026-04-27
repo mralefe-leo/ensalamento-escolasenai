@@ -1,0 +1,148 @@
+
+/* 1. LAYOUT */    
+/* Sobe o conteúdo para o topo */
+    div.block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 3rem !important;
+    }
+    
+    /* Remove o fundo do cabeçalho padrão */
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+    }
+
+    /* Garante fundo transparente nas abas */
+    .stTabs [data-baseweb="tab-list"], 
+    .stTabs [data-baseweb="tab"],
+    [data-baseweb="tab-panel"] {
+        background-color: transparent !important;
+    }
+
+    /* 2. ESTILOS DO SEU TEMA */
+
+    /* Fonte base */
+    html, body, [class*="css"] {
+        font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+    }
+
+    /* Sidebar - Mantendo seu Azul e Texto Preto */
+    [data-testid="stSidebar"] {
+        background: transparent ; 
+    }
+    [data-testid="stSidebar"] * {
+        color: #e94d16 !important;
+        
+    }
+
+    /* Header Personalizado */
+    .header-senai {
+        background: #2b78c5;
+        padding: 24px 32px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        color: white;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .header-senai h1 { margin: 0; font-size: 2.2rem; font-weight: 700; }
+    .header-senai p { margin-top: 5px; font-size: 1.1rem; opacity: 0.9; }
+
+    
+    [data-testid="stForm"] {
+        background-color: var(--secondary-background-color); 
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border: 1px solid rgba(128,128,128, 0.2);
+    }
+
+    /* Ajuste de Botões */
+    div.stButton > button {
+        background-color: #2b78c5; 
+        color: white;
+        border: none;
+        font-weight: bold;
+        width: 100%;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s;
+    }
+    div.stButton > button:hover {
+        background-color: #e0e0e0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        color: #2b78c5; 
+    }
+            /* Ajuste de Botões Padrão (Azul) */
+    div.stButton > button {
+        background-color: #2b78c5; 
+        color: white;
+        border: none;
+        font-weight: bold;
+        width: 100%;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s;
+    }
+    div.stButton > button:hover {
+        background-color: #e0e0e0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        color: #2b78c5; 
+    }
+
+    /* Botão de Confirmar Agendamento (Formulário) - Verde Sucesso */
+    [data-testid="stFormSubmitButton"] > button {
+        background-color: #198754 !important; 
+        color: white !important;
+        border: none !important;
+    }
+    [data-testid="stFormSubmitButton"] > button:hover {
+        background-color: #146c43 !important; 
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+        color: white !important;
+    }
+    
+
+    /* Tabelas */
+    [data-testid="stDataFrame"] {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+    }
+
+    /* CONFIGURAÇÃO DAS TABS */
+    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
+    
+    .stTabs [data-baseweb="tab"] {
+        height: auto;
+        white-space: pre-wrap;
+        background-color: transparent !important; 
+        gap: 1px;
+        padding: 10px 25px;
+        color: #2b78c5;
+        font-size: 20px !important; 
+        font-weight: bold;
+        border: 1px solid rgba(128,128,128, 0.2);
+        border-bottom: none;
+        border-radius: 8px 8px 0 0;
+    }
+
+    /* Aba Selecionada */
+    .stTabs [aria-selected="true"] {
+        background-color: #2b78c5 !important;
+        color: white !important;
+    }
+
+    /* FIX BOTÃO IMAGEM */
+    [data-testid="stSidebar"] [data-testid="stImage"] button {
+        background-color: white !important;
+        border: 2px solid #2b78c5 !important; /* Mudei para seu Azul */
+        border-radius: 50% !important;
+        width: 32px !important;
+        height: 32px !important;
+        opacity: 1 !important;
+    }
+    /* Ícone Azul */
+    [data-testid="stSidebar"] [data-testid="stImage"] button svg {
+        
+        filter: invert(33%) sepia(99%) saturate(1637%) hue-rotate(193deg) brightness(91%) contrast(90%) !important;
+        transform: scale(0.9);
+    }
+    

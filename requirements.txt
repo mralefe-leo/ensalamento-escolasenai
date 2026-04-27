@@ -3,3 +3,4 @@ pandas
 gspread
 oauth2client
 matplotlib
+plotly==5.24.0
