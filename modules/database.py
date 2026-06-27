@@ -56,3 +56,4 @@ def carregar_lista_auxiliar(nome_aba):
             return sorted(valores[1:]) 
         return []
     except: return []
+

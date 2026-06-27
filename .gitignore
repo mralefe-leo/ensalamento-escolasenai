@@ -1,3 +1,5 @@
 "credentials.json" 
 "__pycache__/" 
 credentials.json 
+.streamlit/
+__pycache__/

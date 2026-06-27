@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import plotly.express as px
-
 from modules.database import carregar_dados, carregar_lista_auxiliar, conectar_google_sheets
 from modules.logic import verificar_conflito_sala, verificar_disponibilidade_recursos, TOTAL_CHROMEBOOKS, TOTAL_NOTEBOOKS
 from modules.relatorio import gerar_imagem_ensalamento
+
 
 
 
@@ -365,27 +365,34 @@ with tab3:
             st.info("Banco de dados vazio.")
 
     st.markdown("---")
-    st.info("Utilize esta área para alimentar as listas do sistema.")
+    
+    st.info("Utilize esta área para alimentar a base de dados do sistema.")
     
     col_a, col_b, col_c = st.columns(3)
     
     # --- CADASTRO DE DOCENTES ---
     with col_a:
-        st.markdown("**🧑‍🏫 Docentes**")
+        st.markdown("**👩‍🏫 Docentes**")
         with st.form("add_docente", clear_on_submit=True):
             novo_docente = st.text_input("Nome do Docente")
             if st.form_submit_button("Adicionar"):
                 if novo_docente:
-                    ss = conectar_google_sheets()
-                    try:
-                        ws = ss.worksheet("Docentes")
-                        ws.append_row([novo_docente])
-                        st.success("Docente salvo com sucesso!")
-                        # CORREÇÃO AQUI: Limpa SÓ a lista auxiliar
-                        carregar_lista_auxiliar.clear()
-                        import time; time.sleep(1.5)
-                        st.rerun() 
-                    except: st.error("Aba 'Docentes' não encontrada.")
+                    novo_docente_limpo = novo_docente.strip().upper()
+                    lista_docentes = carregar_lista_auxiliar("Docentes")
+                    
+                    if any(novo_docente_limpo.lower() == item.lower() for item in lista_docentes):
+                        st.warning(f"⚠️ '{novo_docente_limpo}' já está cadastrado!")
+                    else:
+                        ss = conectar_google_sheets()
+                        try:
+                            ws = ss.worksheet("Docentes")
+                            ws.append_row([novo_docente_limpo])
+                            st.success("Docente salvo com sucesso!")
+                            carregar_lista_auxiliar.clear()
+                            import time; time.sleep(1.5)
+                            st.rerun() 
+                        except Exception as e: 
+                            st.error(f"Erro ao salvar: {e}")
     
     # --- CADASTRO DE TURMAS ---
     with col_b:
@@ -394,16 +401,22 @@ with tab3:
             nova_turma = st.text_input("Nome da Turma")
             if st.form_submit_button("Adicionar"):
                 if nova_turma:
-                    ss = conectar_google_sheets()
-                    try:
-                        ws = ss.worksheet("Turmas")
-                        ws.append_row([nova_turma])
-                        st.success("Turma salva com sucesso!")
-                        # CORREÇÃO AQUI
-                        carregar_lista_auxiliar.clear()
-                        import time; time.sleep(1.5)
-                        st.rerun()
-                    except: st.error("Aba 'Turmas' não encontrada.")
+                    nova_turma_limpa = nova_turma.strip().upper()
+                    lista_turmas = carregar_lista_auxiliar("Turmas")
+                    
+                    if any(nova_turma_limpa.lower() == item.lower() for item in lista_turmas):
+                        st.warning(f"⚠️ '{nova_turma_limpa}' já está cadastrada!")
+                    else:
+                        ss = conectar_google_sheets()
+                        try:
+                            ws = ss.worksheet("Turmas")
+                            ws.append_row([nova_turma_limpa])
+                            st.success("Turma salva com sucesso!")
+                            carregar_lista_auxiliar.clear()
+                            import time; time.sleep(1.5)
+                            st.rerun()
+                        except Exception as e: 
+                            st.error(f"Erro ao salvar: {e}")
 
     # --- CADASTRO DE SALAS ---
     with col_c:
@@ -412,16 +425,22 @@ with tab3:
             nova_sala = st.text_input("Nome da Sala")
             if st.form_submit_button("Adicionar"):
                 if nova_sala:
-                    ss = conectar_google_sheets()
-                    try:
-                        ws = ss.worksheet("Salas")
-                        ws.append_row([nova_sala])
-                        st.success("Sala salva com sucesso!")
-                        # CORREÇÃO AQUI
-                        carregar_lista_auxiliar.clear()
-                        import time; time.sleep(1.5)
-                        st.rerun()
-                    except: st.error("Aba 'Salas' não encontrada.")
+                    nova_sala_limpa = nova_sala.strip().upper()
+                    lista_salas = carregar_lista_auxiliar("Salas")
+                    
+                    if any(nova_sala_limpa.lower() == item.lower() for item in lista_salas):
+                        st.warning(f"⚠️ '{nova_sala_limpa}' já está cadastrada!")
+                    else:
+                        ss = conectar_google_sheets()
+                        try:
+                            ws = ss.worksheet("Salas")
+                            ws.append_row([nova_sala_limpa])
+                            st.success("Sala salva com sucesso!")
+                            carregar_lista_auxiliar.clear()
+                            import time; time.sleep(1.5)
+                            st.rerun()
+                        except Exception as e: 
+                            st.error(f"Erro ao salvar: {e}")
     
     st.markdown("---")
     
@@ -434,12 +453,17 @@ with tab3:
 
 # TAB 4: DASHBOARD INTERATIVO
 
+
 with tab4:
     st.markdown("<br>", unsafe_allow_html=True)
-    c_dash1, c_dash2, c_dash3 = st.columns([1, 2, 1])
     
-    # Filtro de data centralizado
-    data_dash = c_dash2.date_input("📅 Selecione a Data para Análise", datetime.today(), key="data_dash")
+    # 1. FILTROS (Lado a Lado)
+    c_dash1, c_dash2, c_dash3 = st.columns([1, 1, 1])
+    
+    with c_dash1:
+        data_dash = st.date_input("Selecione a Data", datetime.today(), key="data_dash")
+    with c_dash2:
+        turno_dash = st.selectbox("Filtrar por Turno", ["Todos", "Manhã", "Tarde", "Noite", "Integral"], key="turno_dash")
     
     df_dash = carregar_dados()
     
@@ -447,10 +471,14 @@ with tab4:
         df_dash['data'] = df_dash['data'].astype(str)
         df_dia = df_dash[df_dash['data'] == str(data_dash)]
         
+        # Filtragem inicial por turno se não for "Todos"
+        if turno_dash != "Todos":
+            df_dia = df_dia[df_dia['turno'] == turno_dash]
+        
         if not df_dia.empty:
             st.markdown("---")
             
-            # --- 1. INDICADORES (KPIs) ---
+            # --- 2. INDICADORES (KPIs) ---
             kpi1, kpi2, kpi3 = st.columns(3)
             total_alunos = int(df_dia['qtd_alunos'].sum())
             uso_chrome = int(df_dia['qtd_chromebooks'].sum())
@@ -462,38 +490,102 @@ with tab4:
             
             st.markdown("<br><br>", unsafe_allow_html=True)
             
-            # --- 2. GRÁFICOS INTERATIVOS ---
+            # --- 3. GRÁFICOS INTERATIVOS ---
             col_graf1, col_graf2 = st.columns(2)
             
             with col_graf1:
-                # Gráfico de Barras: Uso por Ambiente
-                uso_salas = df_dia['sala'].value_counts().reset_index()
-                uso_salas.columns = ['Ambiente', 'Reservas']
                 
-                fig_salas = px.bar(
-                    uso_salas, x='Ambiente', y='Reservas', 
-                    title="Ambientes Mais Utilizados",
-                    color='Reservas', 
-                    color_continuous_scale='Blues' # Usa paleta de azul SENAI
+                st.markdown(
+                    "<p style='font-size: 14px; color: #555; background-color: #f8f9fa; padding: 8px; border-radius: 5px; border-left: 4px solid #2b78c5;'>"
+                    "💡 <b>Dica de Navegação:</b> Passe o mouse sobre as salas para ver os detalhes. "
+                    "Se você clicar sem querer e a imagem der zoom, <b>clique na faixa do topo</b> para voltar."
+                    "</p>", 
+                    unsafe_allow_html=True
                 )
-                # Oculta fundo para ficar clean no modo escuro
-                fig_salas.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") 
-                st.plotly_chart(fig_salas, use_container_width=True)
+                
+                
+                lista_salas_todas = carregar_lista_auxiliar("Salas")
+                
+                dados_status = []
+                
+                for s in lista_salas_todas:
+                    bookings_da_sala = df_dia[df_dia['sala'] == s]
+                    
+                    if not bookings_da_sala.empty:
+                        status_sala = '🔴 Ocupadas'
+                        linhas_detalhe = []
+                        
+                        for _, row in bookings_da_sala.iterrows():
+                            t_atual = row.get('turno', 'N/A')
+                            turma_atual = row.get('turma', 'N/A')
+                            
+                            docente_atual = row.get('professor', 'N/A')
+                            
+                            linhas_detalhe.append(
+                                f"<b>⏱ Turno:</b> {t_atual}<br>"
+                                f"<b>Turma:</b> {turma_atual}<br>"
+                                f"<b>Docente:</b> {docente_atual}"
+                            )
+                        
+                        detalhes_string = "<br>------------------------<br>".join(linhas_detalhe)
+                    else:
+                        status_sala = '🟢 Livres'
+                        detalhes_string = "<b>Totalmente Disponível</b><br>Nenhum agendamento para este período."
+                        
+                    dados_status.append({
+                        'Visão Geral': '⬅️ CLIQUE AQUI PARA VOLTAR', 
+                        'Ambiente': s,
+                        'Status': status_sala,
+                        'Detalhes': detalhes_string,
+                        'Valor': 1
+                    })
+                    
+                df_status = pd.DataFrame(dados_status)
+                
+                if not df_status.empty:
+                    titulo_mapa = f"Visão de Ambientes ({turno_dash})" if turno_dash != "Todos" else "Visão de Ambientes (Dia Completo)"
+                    
+                    fig_status = px.treemap(
+                        df_status, 
+                        path=['Visão Geral', 'Status', 'Ambiente'], 
+                        values='Valor',
+                        color='Status', 
+                        
+                        color_discrete_map={'🔴 Ocupadas': '#e94d16', '🟢 Livres': '#198754', '(?)': '#e9ecef'},
+                        title=titulo_mapa,
+                        hover_data=['Detalhes'] 
+                    )
+                    
+                    fig_status.update_layout(paper_bgcolor="rgba(0,0,0,0)", margin=dict(t=40, l=10, r=10, b=10))
+                    fig_status.data[0].textinfo = 'label' 
+                    
+                    
+                    fig_status.update_traces(
+                        root=dict(color="#e9ecef"),
+                        hovertemplate="<b>📍 %{label}</b><br><br>%{customdata[0]}<extra></extra>"
+                    )
+                    
+                    st.plotly_chart(fig_status, use_container_width=True)
+                else:
+                    st.warning("⚠️ Nenhuma sala cadastrada no sistema ainda.")
 
             with col_graf2:
-                # Gráfico de Rosca: Alunos por Turno
+                
                 alunos_turno = df_dia.groupby('turno')['qtd_alunos'].sum().reset_index()
                 
                 fig_turnos = px.pie(
                     alunos_turno, names='turno', values='qtd_alunos', 
                     title="Distribuição de Alunos por Turno",
-                    hole=0.4, # Deixa com formato de rosca (Donut)
+                    hole=0.4, 
                     color_discrete_sequence=['#2b78c5', '#e94d16', '#198754', '#ffc107']
                 )
                 fig_turnos.update_layout(paper_bgcolor="rgba(0,0,0,0)")
                 st.plotly_chart(fig_turnos, use_container_width=True)
                 
         else:
-            st.info("Nenhum agendamento registrado para esta data. Os gráficos aparecerão aqui quando houver reservas.")
+            if turno_dash != "Todos":
+                st.info(f"Nenhum agendamento registrado para o turno da **{turno_dash}** nesta data.")
+            else:
+                st.info("Nenhum agendamento registrado para esta data.")
     else:
         st.info("O banco de dados está vazio.")
