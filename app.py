@@ -16,12 +16,20 @@ st.set_page_config(
     initial_sidebar_state="expanded"
     
 )
-# Ocultar menu padrão e rodapé do Streamlit para evitar curiosos
+
+# Ocultar menu padrão, barra do GitHub e rodapé do Streamlit
 esconder_menu = """
         <style>
-        #MainMenu {visibility: hidden;}
-        header {visibility: hidden;}
-        footer {visibility: hidden;}
+        /* Oculta a barra de ferramentas superior (GitHub, Share, etc.) */
+        [data-testid="stToolbar"] {display: none !important;}
+        
+        /* Oculta o cabeçalho padrão completamente */
+        [data-testid="stHeader"] {display: none !important;}
+        .stApp > header {display: none !important;}
+        
+        /* Oculta o menu principal antigo e o rodapé */
+        #MainMenu {display: none !important;}
+        footer {display: none !important;}
         </style>
         """
 st.markdown(esconder_menu, unsafe_allow_html=True)
