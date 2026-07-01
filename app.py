@@ -14,7 +14,17 @@ st.set_page_config(
     page_icon="assets/logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
+    
 )
+# Ocultar menu padrão e rodapé do Streamlit para evitar curiosos
+esconder_menu = """
+        <style>
+        #MainMenu {visibility: hidden;}
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
+        </style>
+        """
+st.markdown(esconder_menu, unsafe_allow_html=True)
 
 if 'logado' not in st.session_state:
     st.session_state['logado'] = False
