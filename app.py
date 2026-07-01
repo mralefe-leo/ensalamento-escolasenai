@@ -7,12 +7,10 @@ from modules.logic import verificar_conflito_sala, verificar_disponibilidade_rec
 from modules.relatorio import gerar_imagem_ensalamento
 
 
-
-
 # CONFIGURAÇÃO DA PÁGINA
 
 st.set_page_config(
-    page_title="Gestão de Salas | SENAI HUB",
+    page_title="Gestão de Salas | Escola SENAI",
     page_icon="assets/logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -78,19 +76,14 @@ with open("style/style.css", encoding="utf-8") as f:
 
 # LISTAS DE DADOS
 
-OPCOES_INICIO = ["07:30", "13:00", "13:30", "18:00", "18:30"]
-OPCOES_FIM = ["11:00", "11:30", "16:00", "17:00", "17:30", "21:50"]
+OPCOES_INICIO = ["07:30", "13:30", "18:00"]
+OPCOES_FIM = ["11:30", "13:30", "16:30", "17:30", "22:00"]
 
 OPCOES_INTERVALO = [
-    "Sem Intervalo", 
-    "08:45 – 09:05",
-    "09:10 – 09:30",
-    "09:35 – 09:55",
-    "14:45 – 15:05",
-    "15:10 – 15:30",
-    "15:35 – 15:55",
-    "19:40 – 20:00",
-    "20:05 – 20:25"
+    "Sem Intervalo",
+    "09:00 - 09:20",
+    "15:00 - 15:20",
+    "20:00 - 20:30"
 ]
 
 with st.sidebar:
@@ -102,7 +95,7 @@ with st.sidebar:
         st.image("assets/1.png", use_container_width=True)
         
     except: pass
-    st.caption("Sistema de Gestão v1.0")
+    st.caption("Sistema de Gestão v1.0 | SENAIHUB DR/AC")
 
 
 # HEADER
