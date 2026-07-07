@@ -24,7 +24,7 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     )
 
     width_docente = 18
-    width_turma = 28
+    width_turma = 25
 
     def advanced_wrap_indent(text, width, pad="   "):
         lines = textwrap.wrap(str(text), width=width)
