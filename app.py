@@ -138,7 +138,7 @@ with tab1:
     lista_turmas = carregar_lista_auxiliar("Turmas")
     lista_salas = carregar_lista_auxiliar("Salas")
 
-    with st.form("form_agendamento"):
+    with st.form("form_agendamento", clear_on_submit=True):
         st.subheader("Dados do Agendamento")
         col_t1_1, col_t1_2 = st.columns(2)
         
@@ -222,10 +222,8 @@ with tab1:
                             qtd_alunos              
                         ])
                         st.success("✅ Agendado com sucesso!")
-                        import time
-                        time.sleep(1.5)
-                        st.rerun()
-
+                        st.cache_data.clear() # Limpa o cache para a Tab 2 ver os dados novos na mesma hora
+                    
 
 # TAB 2: VISUALIZAÇÃO (CORRIGIDA)
 with tab2:
@@ -379,8 +377,7 @@ with tab3:
                             ws.append_row([novo_docente_limpo])
                             st.success("Docente salvo com sucesso!")
                             carregar_lista_auxiliar.clear()
-                            import time; time.sleep(1.5)
-                            st.rerun() 
+                            st.cache_data.clear() # Adicione isso e apague o rerun abaixo!
                         except Exception as e: 
                             st.error(f"Erro ao salvar: {e}")
     
@@ -404,7 +401,7 @@ with tab3:
                             st.success("Turma salva com sucesso!")
                             carregar_lista_auxiliar.clear()
                             import time; time.sleep(1.5)
-                            st.rerun()
+                            st.cache_data.clear() # Adicione isso e apague o rerun abaixo!
                         except Exception as e: 
                             st.error(f"Erro ao salvar: {e}")
 
@@ -428,7 +425,7 @@ with tab3:
                             st.success("Sala salva com sucesso!")
                             carregar_lista_auxiliar.clear()
                             import time; time.sleep(1.5)
-                            st.rerun()
+                            st.cache_data.clear() # Adicione isso e apague o rerun abaixo!
                         except Exception as e: 
                             st.error(f"Erro ao salvar: {e}")
     
