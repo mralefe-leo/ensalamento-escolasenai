@@ -125,12 +125,31 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-menu_selecionado = st.radio(
-    "Navegação", 
-    ["Novo Agendamento", "Visualizar Agenda", "Coordenação", "Dashboard"],
-    horizontal=True,
-    label_visibility="collapsed" 
-)
+if 'menu_ativo' not in st.session_state:
+    st.session_state['menu_ativo'] = "Novo Agendamento"
+
+# --- O NOVO MENU EM FORMATO DE BOTÕES ---
+c_menu1, c_menu2, c_menu3, c_menu4 = st.columns(4)
+
+with c_menu1:
+    if st.button("Novo Agendamento", use_container_width=True, type="primary" if st.session_state['menu_ativo'] == "Novo Agendamento" else "secondary"):
+        st.session_state['menu_ativo'] = "Novo Agendamento"
+        st.rerun()
+
+with c_menu2:
+    if st.button("Visualizar Agenda", use_container_width=True, type="primary" if st.session_state['menu_ativo'] == "Visualizar Agenda" else "secondary"):
+        st.session_state['menu_ativo'] = "Visualizar Agenda"
+        st.rerun()
+
+with c_menu3:
+    if st.button("Coordenação", use_container_width=True, type="primary" if st.session_state['menu_ativo'] == "Coordenação" else "secondary"):
+        st.session_state['menu_ativo'] = "Coordenação"
+        st.rerun()
+
+with c_menu4:
+    if st.button("Dashboard", use_container_width=True, type="primary" if st.session_state['menu_ativo'] == "Dashboard" else "secondary"):
+        st.session_state['menu_ativo'] = "Dashboard"
+        st.rerun()
 
 st.markdown("---")
 
