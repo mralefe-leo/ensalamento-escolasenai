@@ -23,8 +23,8 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
         axis=1
     )
 
-    width_docente = 24
-    width_turma = 32
+    width_docente = 18
+    width_turma = 27
 
     def advanced_wrap_indent(text, width, pad="   "):
         lines = textwrap.wrap(str(text), width=width)
@@ -81,8 +81,8 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     tabela.set_fontsize(11)
 
     larguras = {
-        'Turno': 0.08, 'Ambiente': 0.25, 'Docente': 0.15, 'Turma': 0.30, 
-        'Alunos': 0.07, 'Intervalo': 0.08, 'Recursos': 0.10
+        'Turno': 0.07, 'Ambiente': 0.22, 'Docente': 0.20, 'Turma': 0.28, 
+        'Alunos': 0.06, 'Intervalo': 0.08, 'Recursos': 0.09
     }
 
     for (r, c), cell in tabela.get_celld().items():
