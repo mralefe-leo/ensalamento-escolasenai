@@ -156,7 +156,7 @@ st.markdown("---")
 
 # TAB 1: AGENDAMENTO 
  
-
+menu_selecionado = st.session_state.get('menu_ativo', 'Novo Agendamento')
 if menu_selecionado == "Novo Agendamento":
     
     lista_docentes = carregar_lista_auxiliar("Docentes")
