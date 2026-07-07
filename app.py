@@ -17,22 +17,19 @@ st.set_page_config(
     
 )
 
-# Ocultar menu padrão, barra do GitHub e rodapé do Streamlit
+# Ocultar menu padrão, barra do GitHub e rodapé sem quebrar as Abas
 esconder_menu = """
         <style>
-        /* Oculta a barra de ferramentas superior (GitHub, Share, etc.) */
-        [data-testid="stToolbar"] {display: none !important;}
+        /* Oculta APENAS a barra de ferramentas (GitHub, Share) preservando a estrutura da página */
+        [data-testid="stToolbar"] {visibility: hidden !important;}
         
-        /* Oculta o cabeçalho padrão completamente */
-        [data-testid="stHeader"] {display: none !important;}
-        .stApp > header {display: none !important;}
-        
-        /* Oculta o menu principal antigo e o rodapé */
-        #MainMenu {display: none !important;}
-        footer {display: none !important;}
+        /* Oculta o menu hambúrguer e o rodapé */
+        #MainMenu {visibility: hidden !important;}
+        footer {visibility: hidden !important;}
         </style>
         """
 st.markdown(esconder_menu, unsafe_allow_html=True)
+
 
 if 'logado' not in st.session_state:
     st.session_state['logado'] = False
@@ -131,35 +128,40 @@ tab1, tab2, tab3, tab4 = st.tabs(["Novo Agendamento", "Visualizar Agenda", "Coor
 # TAB 1: AGENDAMENTO 
  
 
-# TAB 1: AGENDAMENTO 
 with tab1:
     
     lista_docentes = carregar_lista_auxiliar("Docentes")
     lista_turmas = carregar_lista_auxiliar("Turmas")
     lista_salas = carregar_lista_auxiliar("Salas")
 
-    with st.form("form_agendamento", clear_on_submit=True):
+    with st.form("form_agendamento"):
         st.subheader("Dados do Agendamento")
-        col_t1_1, col_t1_2 = st.columns(2)
+        c1, c2 = st.columns(2)
         
-        with col_t1_1:
-            professor = st.selectbox("Docente", lista_docentes, key="t1_prof") if lista_docentes else st.text_input("Docente (Cadastre na aba Coordenação)", key="t1_prof_txt")
-            turma = st.selectbox("Turma/Curso", lista_turmas, key="t1_turma") if lista_turmas else st.text_input("Turma (Cadastre na aba Coordenação)", key="t1_turma_txt")
-            sala = st.selectbox("Ambiente / Sala", lista_salas, key="t1_sala") if lista_salas else st.warning("Cadastre salas na aba Coordenação")
+        
+        with c1:
+            professor = st.selectbox("Docente", lista_docentes) if lista_docentes else st.text_input("Docente (Cadastre na aba Coordenação)")
+            turma = st.selectbox("Turma/Curso", lista_turmas) if lista_turmas else st.text_input("Turma (Cadastre na aba Coordenação)")
+            sala = st.selectbox("Ambiente / Sala", lista_salas) if lista_salas else st.warning("Cadastre salas na aba Coordenação")
+            
             
             st.markdown("<br>", unsafe_allow_html=True) 
-            data = st.date_input("Data da Aula", key="t1_data")
+            data = st.date_input("Data da Aula")
+            
             
             st.markdown("<br>", unsafe_allow_html=True)
-            qtd_alunos = st.number_input("Quantidade de Alunos", min_value=0, step=1, help="Número aproximado de alunos", key="t1_alunos")
+            qtd_alunos = st.number_input("Quantidade de Alunos", min_value=0, step=1, help="Número aproximado de alunos")
         
-        with col_t1_2:
-            turno = st.selectbox("Turno", ["Manhã", "Tarde", "Noite", "Integral"], key="t1_turno")
-            situacao = st.radio("Período", ["Turno Inteiro", "1º Horário", "2º Horário"], horizontal=True, key="t1_sit")
+        # --- COLUNA DA DIREITA (c2) ---
+        with c2:
+            turno = st.selectbox("Turno", ["Manhã", "Tarde", "Noite", "Integral"])
+            situacao = st.radio("Período", ["Turno Inteiro", "1º Horário", "2º Horário"], horizontal=True)
+            
             
             ch1, ch2 = st.columns(2)
-            hora_inicio = ch1.selectbox("Início Aula", OPCOES_INICIO, key="t1_hinicio")
-            hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM, key="t1_hfim")
+            hora_inicio = ch1.selectbox("Início Aula", OPCOES_INICIO)
+            hora_fim = ch2.selectbox("Fim Aula", OPCOES_FIM)
+            
             
             st.markdown("<br>", unsafe_allow_html=True)
             ci1, ci2 = st.columns(2)
@@ -170,7 +172,8 @@ with tab1:
                     """, 
                     unsafe_allow_html=True
                 )
-                sel_intervalo = st.selectbox("Selecione intervalo", OPCOES_INTERVALO, label_visibility="collapsed", key="t1_intervalo")
+                sel_intervalo = st.selectbox("Selecione intervalo", OPCOES_INTERVALO, label_visibility="collapsed")
+            
             
             if sel_intervalo and "–" in sel_intervalo:
                 partes = sel_intervalo.split("–")
@@ -183,8 +186,8 @@ with tab1:
         st.markdown("---")
         st.markdown(f"**Recursos Móveis (Estoque: {TOTAL_CHROMEBOOKS} Chrome | {TOTAL_NOTEBOOKS} Note)**")
         cr1, cr2 = st.columns(2)
-        qtd_chrome = cr1.number_input("Qtd. Chromebooks", 0, TOTAL_CHROMEBOOKS, key="t1_chrome")
-        qtd_note = cr2.number_input("Qtd. Notebooks", 0, TOTAL_NOTEBOOKS, key="t1_note")
+        qtd_chrome = cr1.number_input("Qtd. Chromebooks", 0, TOTAL_CHROMEBOOKS)
+        qtd_note = cr2.number_input("Qtd. Notebooks", 0, TOTAL_NOTEBOOKS)
 
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -194,8 +197,10 @@ with tab1:
             if not professor or not turma or not sala:
                 st.warning("⚠️ Verifique se Docente, Turma e Sala estão selecionados.")
             else:
+                
                 obj_inicio = datetime.strptime(hora_inicio, "%H:%M").time()
                 obj_fim = datetime.strptime(hora_fim, "%H:%M").time()
+                
                 
                 if obj_fim <= obj_inicio:
                     st.error("❌ Erro de Lógica: O horário de FIM deve ser maior que o INÍCIO.")
@@ -212,6 +217,7 @@ with tab1:
                         ss = conectar_google_sheets()
                         sheet = ss.sheet1
                         
+                        
                         sheet.append_row([
                             str(data), turno, situacao, hora_inicio, hora_fim,
                             str(sala).upper(),      
@@ -222,16 +228,19 @@ with tab1:
                             qtd_alunos              
                         ])
                         st.success("✅ Agendado com sucesso!")
-                        st.cache_data.clear() # Limpa o cache para a Tab 2 ver os dados novos na mesma hora
-                    
+                        import time
+                        time.sleep(1.5)
+                        st.rerun()
+
 
 # TAB 2: VISUALIZAÇÃO (CORRIGIDA)
+
 with tab2:
     
-    col_t2_1, col_t2_2, col_t2_3 = st.columns([1,2,1])
-    filtro_data = col_t2_1.date_input("Data", datetime.today(), key="t2_data")
-    filtro_turno = col_t2_2.multiselect("Turno", ["Manhã", "Tarde", "Noite", "Integral"], default=["Manhã", "Tarde", "Noite", "Integral"], key="t2_turno")
-    if col_t2_3.button("🔄 Atualizar", key="t2_btn_atualizar"): st.cache_data.clear()
+    c1, c2, c3 = st.columns([1,2,1])
+    filtro_data = c1.date_input("Data", datetime.today())
+    filtro_turno = c2.multiselect("Turno", ["Manhã", "Tarde", "Noite", "Integral"], default=["Manhã", "Tarde", "Noite", "Integral"])
+    if c3.button("🔄 Atualizar"): st.cache_data.clear()
 
     df = carregar_dados()
     if not df.empty:
@@ -263,20 +272,31 @@ with tab2:
                 'qtd_notebooks': 'Notebooks'
             })
             
+            
             st.dataframe(
                 df_display,
                 use_container_width=True,
                 hide_index=True,
                 column_config={
-                    "Alunos": st.column_config.NumberColumn("Alunos", format="%d"),
-                    "Chromebooks": st.column_config.NumberColumn("Chromebooks", format="%d"),
-                    "Notebooks": st.column_config.NumberColumn("Notebooks", format="%d")
+                    "Alunos": st.column_config.NumberColumn(
+                        "Alunos",
+                        format="%d", 
+                    ),
+                    "Chromebooks": st.column_config.NumberColumn(
+                        "Chromebooks",
+                        format="%d",
+                    ),
+                    "Notebooks": st.column_config.NumberColumn(
+                        "Notebooks",
+                        format="%d",
+                    )
                 }
             )
             
+            
             col_d1, _ = st.columns([1,3])
             buf = gerar_imagem_ensalamento(df_view, filtro_data)
-            col_d1.download_button("📥 Baixar Relatório (PNG)", data=buf, file_name=f"Ensalamento_{filtro_data}.png", mime="image/png", key="t2_btn_down")
+            col_d1.download_button("📥 Baixar Relatório (PNG)", data=buf, file_name=f"Ensalamento_{filtro_data}.png", mime="image/png")
             
             total_alunos = int(df_view['qtd_alunos'].sum())
             st.caption(f"Total Reservado: {df_view['qtd_chromebooks'].sum()} Chromebooks | {df_view['qtd_notebooks'].sum()} Notebooks | Total Alunos: {total_alunos}")
@@ -377,7 +397,8 @@ with tab3:
                             ws.append_row([novo_docente_limpo])
                             st.success("Docente salvo com sucesso!")
                             carregar_lista_auxiliar.clear()
-                            st.cache_data.clear() # Adicione isso e apague o rerun abaixo!
+                            import time; time.sleep(1.5)
+                            st.rerun() 
                         except Exception as e: 
                             st.error(f"Erro ao salvar: {e}")
     
@@ -401,7 +422,7 @@ with tab3:
                             st.success("Turma salva com sucesso!")
                             carregar_lista_auxiliar.clear()
                             import time; time.sleep(1.5)
-                            st.cache_data.clear() # Adicione isso e apague o rerun abaixo!
+                            st.rerun()
                         except Exception as e: 
                             st.error(f"Erro ao salvar: {e}")
 
@@ -425,7 +446,7 @@ with tab3:
                             st.success("Sala salva com sucesso!")
                             carregar_lista_auxiliar.clear()
                             import time; time.sleep(1.5)
-                            st.cache_data.clear() # Adicione isso e apague o rerun abaixo!
+                            st.rerun()
                         except Exception as e: 
                             st.error(f"Erro ao salvar: {e}")
     
