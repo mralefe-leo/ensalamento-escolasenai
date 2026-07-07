@@ -108,9 +108,7 @@ with st.sidebar:
     
     st.markdown("---")
     
-    menu_selecionado = st.radio("📌 Menu Principal", ["Novo Agendamento", "Visualizar Agenda", "Coordenação", "Dashboard"])
-    st.markdown("---")
-    
+   
     try:
         st.image("assets/1.png", use_container_width=True)
     except: pass
