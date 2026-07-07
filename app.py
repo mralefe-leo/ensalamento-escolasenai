@@ -126,7 +126,15 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-tab1, tab2, tab3, tab4 = st.tabs(["Novo Agendamento", "Visualizar Agenda", "Coordenação", "Dashboard"])
+
+menu_selecionado = st.radio(
+    "Navegação", 
+    ["Novo Agendamento", "Visualizar Agenda", "Coordenação", "Dashboard"],
+    horizontal=True,
+    label_visibility="collapsed" 
+)
+
+st.markdown("---")
 
 
 # TAB 1: AGENDAMENTO 
