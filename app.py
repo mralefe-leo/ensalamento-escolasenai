@@ -105,10 +105,14 @@ with st.sidebar:
     st.markdown("<br>", unsafe_allow_html=True)
     try: st.image("assets/logo.png", use_container_width=True)
     except: pass
+    
     st.markdown("---")
+    
+    menu_selecionado = st.radio("📌 Menu Principal", ["Novo Agendamento", "Visualizar Agenda", "Coordenação", "Dashboard"])
+    st.markdown("---")
+    
     try:
         st.image("assets/1.png", use_container_width=True)
-        
     except: pass
     st.caption("Sistema de Gestão v1.0 | SENAIHUB DR/AC")
 
@@ -128,7 +132,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Novo Agendamento", "Visualizar Agenda", "Coor
 # TAB 1: AGENDAMENTO 
  
 
-with tab1:
+if menu_selecionado == "Novo Agendamento":
     
     lista_docentes = carregar_lista_auxiliar("Docentes")
     lista_turmas = carregar_lista_auxiliar("Turmas")
@@ -235,7 +239,7 @@ with tab1:
 
 # TAB 2: VISUALIZAÇÃO (CORRIGIDA)
 
-with tab2:
+elif menu_selecionado == "Visualizar Agenda":
     
     c1, c2, c3 = st.columns([1,2,1])
     filtro_data = c1.date_input("Data", datetime.today())
@@ -307,7 +311,7 @@ with tab2:
 
 # TAB 3: COORDENAÇÃO 
 
-with tab3:
+elif menu_selecionado == "Coordenação":
     st.subheader("Gestão de Cadastros e Agendamentos")
     
     with st.expander("Remover Agendamentos", expanded=True):
@@ -462,7 +466,7 @@ with tab3:
 # TAB 4: DASHBOARD INTERATIVO
 
 
-with tab4:
+elif menu_selecionado == "Dashboard":
     st.markdown("<br>", unsafe_allow_html=True)
     
     # 1. FILTROS (Lado a Lado)
