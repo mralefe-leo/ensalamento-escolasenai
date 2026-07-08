@@ -548,101 +548,80 @@ elif menu_selecionado == "Dashboard":
             st.markdown("<br><br>", unsafe_allow_html=True)
             
             # --- 3. GRÁFICOS INTERATIVOS ---
-            col_graf1, col_graf2 = st.columns(2)
             
-            with col_graf1:
+            # 1. GRÁFICO DE AMBIENTES (Ganhou 100% da largura no topo)
+            st.markdown(
+                "<p style='font-size: 14px; color: #555; background-color: #f8f9fa; padding: 8px; border-radius: 5px; border-left: 4px solid #2b78c5;'>"
+                "💡 <b>Dica de Navegação:</b> Passe o mouse sobre as salas para ver os detalhes. "
+                "Se você clicar sem querer e a imagem der zoom, <b>clique na faixa do topo</b> para voltar."
+                "</p>", 
+                unsafe_allow_html=True
+            )
+            
+            lista_salas_todas = carregar_lista_auxiliar("Salas")
+            dados_status = []
+            
+            for s in lista_salas_todas:
+                bookings_da_sala = df_dia[df_dia['sala'] == s]
                 
-                st.markdown(
-                    "<p style='font-size: 14px; color: #555; background-color: #f8f9fa; padding: 8px; border-radius: 5px; border-left: 4px solid #2b78c5;'>"
-                    "💡 <b>Dica de Navegação:</b> Passe o mouse sobre as salas para ver os detalhes. "
-                    "Se você clicar sem querer e a imagem der zoom, <b>clique na faixa do topo</b> para voltar."
-                    "</p>", 
-                    unsafe_allow_html=True
-                )
-                
-                
-                lista_salas_todas = carregar_lista_auxiliar("Salas")
-                
-                dados_status = []
-                
-                for s in lista_salas_todas:
-                    bookings_da_sala = df_dia[df_dia['sala'] == s]
-                    
-                    if not bookings_da_sala.empty:
-                        status_sala = '🔴 Ocupadas'
-                        linhas_detalhe = []
-                        
-                        for _, row in bookings_da_sala.iterrows():
-                            t_atual = row.get('turno', 'N/A')
-                            turma_atual = row.get('turma', 'N/A')
-                            
-                            docente_atual = row.get('professor', 'N/A')
-                            
-                            linhas_detalhe.append(
-                                f"<b>⏱ Turno:</b> {t_atual}<br>"
-                                f"<b>Turma:</b> {turma_atual}<br>"
-                                f"<b>Docente:</b> {docente_atual}"
-                            )
-                        
-                        detalhes_string = "<br>------------------------<br>".join(linhas_detalhe)
-                    else:
-                        status_sala = '🟢 Livres'
-                        detalhes_string = "<b>Totalmente Disponível</b><br>Nenhum agendamento para este período."
-                        
-                    dados_status.append({
-                        'Visão Geral': '⬅️ CLIQUE AQUI PARA VOLTAR', 
-                        'Ambiente': s,
-                        'Status': status_sala,
-                        'Detalhes': detalhes_string,
-                        'Valor': 1
-                    })
-                    
-                df_status = pd.DataFrame(dados_status)
-                
-                if not df_status.empty:
-                    titulo_mapa = f"Visão de Ambientes ({turno_dash})" if turno_dash != "Todos" else "Visão de Ambientes (Dia Completo)"
-                    
-                    fig_status = px.treemap(
-                        df_status, 
-                        path=['Visão Geral', 'Status', 'Ambiente'], 
-                        values='Valor',
-                        color='Status', 
-                        
-                        color_discrete_map={'🔴 Ocupadas': '#e94d16', '🟢 Livres': '#198754', '(?)': '#e9ecef'},
-                        title=titulo_mapa,
-                        hover_data=['Detalhes'] 
-                    )
-                    
-                    fig_status.update_layout(paper_bgcolor="rgba(0,0,0,0)", margin=dict(t=40, l=10, r=10, b=10))
-                    fig_status.data[0].textinfo = 'label' 
-                    
-                    
-                    fig_status.update_traces(
-                        root=dict(color="#e9ecef"),
-                        hovertemplate="<b>📍 %{label}</b><br><br>%{customdata[0]}<extra></extra>"
-                    )
-                    
-                    st.plotly_chart(fig_status, use_container_width=True)
+                if not bookings_da_sala.empty:
+                    status_sala = '🔴 Ocupadas'
+                    linhas_detalhe = []
+                    for _, row in bookings_da_sala.iterrows():
+                        t_atual = row.get('turno', 'N/A')
+                        turma_atual = row.get('turma', 'N/A')
+                        docente_atual = row.get('professor', 'N/A')
+                        linhas_detalhe.append(
+                            f"<b>⏱ Turno:</b> {t_atual}<br>"
+                            f"<b>Turma:</b> {turma_atual}<br>"
+                            f"<b>Docente:</b> {docente_atual}"
+                        )
+                    detalhes_string = "<br>------------------------<br>".join(linhas_detalhe)
                 else:
-                    st.warning("⚠️ Nenhuma sala cadastrada no sistema ainda.")
-
-            with col_graf2:
+                    status_sala = '🟢 Livres'
+                    detalhes_string = "<b>Totalmente Disponível</b><br>Nenhum agendamento para este período."
+                    
+                dados_status.append({
+                    'Visão Geral': '⬅️ CLIQUE AQUI PARA VOLTAR', 
+                    'Ambiente': s,
+                    'Status': status_sala,
+                    'Detalhes': detalhes_string,
+                    'Valor': 1
+                })
                 
-                alunos_turno = df_dia.groupby('turno')['qtd_alunos'].sum().reset_index()
-                
-                fig_turnos = px.pie(
-                    alunos_turno, names='turno', values='qtd_alunos', 
-                    title="Distribuição de Alunos por Turno",
-                    hole=0.4, 
-                    color_discrete_sequence=['#2b78c5', '#e94d16', '#198754', '#ffc107']
+            df_status = pd.DataFrame(dados_status)
+            
+            if not df_status.empty:
+                titulo_mapa = f"Visão de Ambientes ({turno_dash})" if turno_dash != "Todos" else "Visão de Ambientes (Dia Completo)"
+                fig_status = px.treemap(
+                    df_status, path=['Visão Geral', 'Status', 'Ambiente'], values='Valor',
+                    color='Status', color_discrete_map={'🔴 Ocupadas': '#e94d16', '🟢 Livres': '#198754', '(?)': '#e9ecef'},
+                    title=titulo_mapa, hover_data=['Detalhes'] 
                 )
-                fig_turnos.update_layout(paper_bgcolor="rgba(0,0,0,0)")
-                st.plotly_chart(fig_turnos, use_container_width=True)
+                fig_status.update_layout(paper_bgcolor="rgba(0,0,0,0)", margin=dict(t=40, l=10, r=10, b=10))
+                fig_status.data[0].textinfo = 'label' 
+                fig_status.update_traces(
+                    root=dict(color="#e9ecef"),
+                    hovertemplate="<b>📍 %{label}</b><br><br>%{customdata[0]}<extra></extra>"
+                )
                 
-        else:
-            if turno_dash != "Todos":
-                st.info(f"Nenhum agendamento registrado para o turno da **{turno_dash}** nesta data.")
+                # Esse gráfico agora vai usar toda a tela
+                st.plotly_chart(fig_status, use_container_width=True)
             else:
-                st.info("Nenhum agendamento registrado para esta data.")
-    else:
-        st.info("O banco de dados está vazio.")
+                st.warning("⚠️ Nenhuma sala cadastrada no sistema ainda.")
+
+
+            st.markdown("---") # Adiciona uma linha divisória elegante entre os gráficos
+
+
+            # 2. GRÁFICO DE PIZZA (Fica logo abaixo, também com largura total)
+            alunos_turno = df_dia.groupby('turno')['qtd_alunos'].sum().reset_index()
+            
+            fig_turnos = px.pie(
+                alunos_turno, names='turno', values='qtd_alunos', 
+                title="Distribuição de Alunos por Turno",
+                hole=0.4, 
+                color_discrete_sequence=['#2b78c5', '#e94d16', '#198754', '#ffc107']
+            )
+            fig_turnos.update_layout(paper_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig_turnos, use_container_width=True)
