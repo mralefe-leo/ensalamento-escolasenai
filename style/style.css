@@ -146,16 +146,10 @@
         transform: scale(0.9);
     }
     
-div[data-testid="stButton"] button[kind="secondary"]:hover {
-    border-color: #004587 !important; /* Cor da borda ao passar o mouse */
-    color: #004587 !important;        /* Cor do texto ao passar o mouse */
-    background-color: #f0f2f6 !important; /* Cor de fundo (opcional) */
-}
-
-/* 2. Efeito de hover para o botão ATIVO (Primário) */
-div[data-testid="stButton"] button[kind="primary"]:hover {
-    background-color: #002b54 !important; /* Um tom de azul mais escuro, por exemplo */
-    border-color: #002b54 !important;
+div[data-testid="stButton"] > button:hover {
+    background-color: #e94d16 !important;
+    border-color: #e94d16 !important;
     color: #ffffff !important;
+    transition: 0.3s ease-in-out;
 }
     
