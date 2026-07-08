@@ -17,24 +17,18 @@ st.set_page_config(
     
 )
 
-# Ocultar menu padrão preservando a seta lateral com a técnica de pointer-events
+# Ocultar menu padrão apagando estruturalmente o bloco da direita
 esconder_menu = """
         <style>
-        /* 1. Torna o cabeçalho inteiro invisível e fantasma (não bloqueia cliques) */
-        header[data-testid="stHeader"] {
-            visibility: hidden !important;
-            pointer-events: none !important;
-        }
-        
-        /* 2. Resgata APENAS a setinha do menu lateral das trevas e permite o clique */
-        [data-testid="collapsedControl"] {
-            visibility: visible !important;
-            pointer-events: auto !important;
-            z-index: 99999 !important;
-        }
-
-        /* 3. Oculta o rodapé padrão */
+        /* Oculta o rodapé e o menu principal clássico */
+        #MainMenu {display: none !important;}
         footer {display: none !important;}
+        
+        /* Abordagem Estrutural: Pega o cabeçalho e esconde TOTALMENTE a última caixa (a da direita), preservando a primeira (setinha) */
+        header[data-testid="stHeader"] > div:last-child,
+        .stApp > header > div:last-child {
+            display: none !important;
+        }
         </style>
         """
 st.markdown(esconder_menu, unsafe_allow_html=True)
