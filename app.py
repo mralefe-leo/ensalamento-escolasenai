@@ -17,21 +17,23 @@ st.set_page_config(
     
 )
 
-# Oculta APENAS a área direita do cabeçalho (Deploy/GitHub/Menu Padrão), deixando a setinha livre
+# Ocultar menu padrão preservando a seta lateral com a técnica de pointer-events
 esconder_menu = """
         <style>
-        /* Oculta o menu hamburguer clássico */
-        #MainMenu {display: none !important;}
+        /* 1. Torna o cabeçalho inteiro invisível e fantasma (não bloqueia cliques) */
+        header[data-testid="stHeader"] {
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
         
-        /* Oculta as ferramentas do desenvolvedor (Deploy, etc) */
-        [data-testid="stToolbar"] {display: none !important;}
-        
-        /* Oculta as novas caixas de ações do cabeçalho das versões mais recentes */
-        [data-testid="stHeaderActionElements"] {display: none !important;}
-        [data-testid="stAppViewOptions"] {display: none !important;}
-        [data-testid="stStatusWidget"] {display: none !important;}
-        
-        /* Oculta o rodapé */
+        /* 2. Resgata APENAS a setinha do menu lateral das trevas e permite o clique */
+        [data-testid="collapsedControl"] {
+            visibility: visible !important;
+            pointer-events: auto !important;
+            z-index: 99999 !important;
+        }
+
+        /* 3. Oculta o rodapé padrão */
         footer {display: none !important;}
         </style>
         """
