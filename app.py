@@ -512,7 +512,7 @@ elif menu_selecionado == "Coordenação":
 
 
 elif menu_selecionado == "Dashboard":
-    st.markdown("<br>", unsafe_allow_html=True)
+    
     
     # 1. FILTROS (Lado a Lado)
     c_dash1, c_dash2, c_dash3 = st.columns([1, 1, 1])
@@ -533,7 +533,6 @@ elif menu_selecionado == "Dashboard":
             df_dia = df_dia[df_dia['turno'] == turno_dash]
         
         if not df_dia.empty:
-            st.markdown("---")
             
             # --- 2. INDICADORES (KPIs) ---
             kpi1, kpi2, kpi3 = st.columns(3)
@@ -545,7 +544,7 @@ elif menu_selecionado == "Dashboard":
             kpi2.metric("💻 Chromebooks Reservados", f"{uso_chrome} / {TOTAL_CHROMEBOOKS}")
             kpi3.metric("🖥️ Notebooks Reservados", f"{uso_note} / {TOTAL_NOTEBOOKS}")
             
-            st.markdown("<br><br>", unsafe_allow_html=True)
+            
             
             # --- 3. GRÁFICOS INTERATIVOS ---
             
