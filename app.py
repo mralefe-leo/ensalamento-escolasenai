@@ -17,15 +17,14 @@ st.set_page_config(
     
 )
 
-# Ocultar menu padrão, barra do GitHub e rodapé sem quebrar as Abas
+# Oculta APENAS a área direita do cabeçalho (Deploy/GitHub/Menu Padrão), deixando a setinha livre
 esconder_menu = """
         <style>
-        /* Oculta APENAS a barra de ferramentas (GitHub, Share) preservando a estrutura da página */
-        [data-testid="stToolbar"] {visibility: hidden !important;}
+        /* Esconde os botões do topo à direita */
+        [data-testid="stHeaderActionElements"] {display: none !important;}
         
-        /* Oculta o menu hambúrguer e o rodapé */
-        #MainMenu {visibility: hidden !important;}
-        footer {visibility: hidden !important;}
+        /* Esconde o rodapé padrão do Streamlit */
+        footer {display: none !important;}
         </style>
         """
 st.markdown(esconder_menu, unsafe_allow_html=True)
