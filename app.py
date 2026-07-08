@@ -20,10 +20,18 @@ st.set_page_config(
 # Oculta APENAS a área direita do cabeçalho (Deploy/GitHub/Menu Padrão), deixando a setinha livre
 esconder_menu = """
         <style>
-        /* Esconde os botões do topo à direita */
-        [data-testid="stHeaderActionElements"] {display: none !important;}
+        /* Oculta o menu hamburguer clássico */
+        #MainMenu {display: none !important;}
         
-        /* Esconde o rodapé padrão do Streamlit */
+        /* Oculta as ferramentas do desenvolvedor (Deploy, etc) */
+        [data-testid="stToolbar"] {display: none !important;}
+        
+        /* Oculta as novas caixas de ações do cabeçalho das versões mais recentes */
+        [data-testid="stHeaderActionElements"] {display: none !important;}
+        [data-testid="stAppViewOptions"] {display: none !important;}
+        [data-testid="stStatusWidget"] {display: none !important;}
+        
+        /* Oculta o rodapé */
         footer {display: none !important;}
         </style>
         """
