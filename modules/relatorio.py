@@ -84,7 +84,7 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
 
     larguras = {
         'Turno': 0.07, 'Ambiente': 0.22, 'Docente': 0.20, 'Turma': 0.25, 
-        'Alunos': 0.06, 'Intervalo': 0.08, 'Recursos': 0.09
+        'Alunos': 0.06, 'Intervalo': 0.09, 'Recursos': 0.09
     }
 
     for (r, c), cell in tabela.get_celld().items():
