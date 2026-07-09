@@ -210,10 +210,18 @@ if menu_selecionado == "Novo Agendamento":
                 )
                 sel_intervalo = st.selectbox("Selecione intervalo", OPCOES_INTERVALO, label_visibility="collapsed", key="t1_intervalo")
             
-            if sel_intervalo and "–" in sel_intervalo:
-                partes = sel_intervalo.split("–")
-                inicio_intervalo = partes[0].strip()
-                fim_intervalo = partes[1].strip()
+            # Lógica blindada para reconhecer qualquer tipo de traço
+            if sel_intervalo and sel_intervalo != "Sem Intervalo":
+                intervalo_limpo = sel_intervalo.replace("–", "-").replace("—", "-")
+                partes = intervalo_limpo.split("-")
+                
+                # Garante que encontrou as duas partes antes de salvar
+                if len(partes) == 2:
+                    inicio_intervalo = partes[0].strip()
+                    fim_intervalo = partes[1].strip()
+                else:
+                    inicio_intervalo = ""
+                    fim_intervalo = ""
             else:
                 inicio_intervalo = ""
                 fim_intervalo = ""

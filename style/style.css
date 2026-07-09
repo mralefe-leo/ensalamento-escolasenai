@@ -152,15 +152,3 @@ div[data-testid="stButton"] > button:hover {
     color: #ffffff !important;
     transition: 0.3s ease-in-out;
 }
-    
-[data-testid="collapsedControl"] {
-    display: block !important;
-    visibility: visible !important;
-    z-index: 99999 !important;
-}
-
-/* Se o cabeçalho estiver oculto, precisamos garantir que a área do botão ainda possa ser clicada */
-header[data-testid="stHeader"] {
-    visibility: visible !important;
-    background-color: transparent !important;
-}
