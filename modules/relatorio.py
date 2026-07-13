@@ -24,7 +24,7 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
     )
 
     width_docente = 18
-    width_turma = 25
+    width_turma = 26
     width_ambiente = 22
 
     def advanced_wrap_indent(text, width, pad="   "):
@@ -48,7 +48,7 @@ def gerar_imagem_ensalamento(df_filtrado, data_selecionada):
 
     num_linhas = len(df_final)
     altura_cabecalho = 2.2 
-    altura_linha = 0.45    
+    altura_linha = 0.70    
     altura_tabela = (num_linhas + 1) * altura_linha 
     fig_height = max(5.0, altura_cabecalho + altura_tabela + 0.3) 
     
